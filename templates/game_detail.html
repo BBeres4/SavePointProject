@@ -11,50 +11,68 @@
   {% include "partials_nav.html" %}
 
   <div class="page">
-    <div id="hero" class="hero"></div>
 
-    <div class="detail">
-      <div class="detail-left">
-        <img id="cover" class="cover" alt="cover" />
-        <div class="stats">
-          <div class="stat"><span>👁</span><b id="views">—</b></div>
-          <div class="stat"><span>❤️</span><b id="likes">—</b></div>
+    <!-- HERO BANNER -->
+    <div id="hero" class="gd-hero"></div>
+
+    <!-- TOP SECTION -->
+    <div class="gd-top">
+      <!-- LEFT: COVER + ACTIONS -->
+      <div class="gd-left">
+        <img id="cover" class="gd-cover" src="" alt="cover">
+
+        <div class="gd-icons">
+          <div class="gd-icon"><span>👁</span> <b id="views">—</b></div>
+          <div class="gd-icon"><span>❤️</span> <b id="likes">—</b></div>
         </div>
 
-        <button id="addBtn" class="primary-btn small">＋ Add to List</button>
-        <button id="reviewBtn" class="ghost-btn small">★ Rate or Review</button>
-        <button id="playLaterBtn" class="ghost-btn small">≡ Add to Play Later</button>
+        <button id="addBtn" class="primary-btn gd-btn">+ Add to List</button>
+        <button id="reviewBtn" class="ghost-btn gd-btn">⭐ Rate or Review</button>
+        <button id="playLaterBtn" class="ghost-btn gd-btn">≡ Add to Play Later</button>
       </div>
 
-      <div class="detail-right">
-        <h1 id="title">Loading…</h1>
-        <div class="sub" id="subline"></div>
-        <p id="desc" class="desc"></p>
-
-        <div class="ratings">
-          <div class="rating-box">
-            <div class="label">Ratings</div>
-            <div class="bars" id="bars"></div>
-          </div>
-          <div class="rating-big">
-            <div class="label">Rating</div>
-            <div class="score" id="score">—</div>
-            <div class="stars" id="stars"></div>
-          </div>
+      <!-- RIGHT: DETAILS -->
+      <div class="gd-right">
+        <div class="gd-title">
+          <h1 id="title">Loading…</h1>
+          <div id="subline" class="gd-sub">—</div>
         </div>
 
-        <div class="section-head">
-          <h2>All Reviews</h2>
-          <a class="link" href="/review/{{game_id}}">Write one</a>
+        <p id="desc" class="gd-desc"></p>
+
+        <div class="gd-ratings">
+          <div class="gd-hist">
+            <div class="gd-label">Ratings</div>
+            <div id="bars" class="gd-bars"></div>
+          </div>
+
+          <div class="gd-scorebox">
+            <div class="gd-label">Ratings</div>
+            <div class="gd-score">
+              <div id="score">—</div>
+              <div id="stars" class="gd-stars"></div>
+            </div>
+          </div>
         </div>
-        <div id="reviews" class="review-list"></div>
       </div>
     </div>
+
+    <!-- REVIEWS -->
+    <div class="gd-reviews">
+      <div class="gd-reviews-head">
+        <h3>All Reviews</h3>
+        <a class="link" href="#">See all</a>
+      </div>
+
+      <div id="reviews" class="review-list"></div>
+    </div>
+
   </div>
 
   <script src="/static/app.js"></script>
   <script>
-    loadGameDetail({{game_id}});
+    loadGameDetail("{{ game_id }}");
   </script>
 </body>
 </html>
+
