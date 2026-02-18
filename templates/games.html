@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Games • GameBoxd</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  {% set active='games' %}
+  {% include "partials_nav.html" %}
+
+  <div class="page">
+    <div class="games-toolbar">
+      <input id="searchInput" class="search" placeholder="Find A Game..." />
+      <div class="filters">
+        <select disabled><option>Year</option></select>
+        <select disabled><option>Genre</option></select>
+        <select disabled><option>Rating</option></select>
+        <select disabled><option>Other</option></select>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Popular Games This Week</h2>
+      <div id="popularGrid" class="grid"></div>
+    </div>
+
+    <div class="section">
+      <h2>Search Results</h2>
+      <div id="searchGrid" class="grid"></div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+  <script>
+    loadGamesPage();
+  </script>
+</body>
+</html>
