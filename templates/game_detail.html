@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Game • GameBoxd</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  {% set active='games' %}
+  {% include "partials_nav.html" %}
+
+  <div class="page">
+    <div id="hero" class="hero"></div>
+
+    <div class="detail">
+      <div class="detail-left">
+        <img id="cover" class="cover" alt="cover" />
+        <div class="stats">
+          <div class="stat"><span>👁</span><b id="views">—</b></div>
+          <div class="stat"><span>❤️</span><b id="likes">—</b></div>
+        </div>
+
+        <button id="addBtn" class="primary-btn small">＋ Add to List</button>
+        <button id="reviewBtn" class="ghost-btn small">★ Rate or Review</button>
+        <button id="playLaterBtn" class="ghost-btn small">≡ Add to Play Later</button>
+      </div>
+
+      <div class="detail-right">
+        <h1 id="title">Loading…</h1>
+        <div class="sub" id="subline"></div>
+        <p id="desc" class="desc"></p>
+
+        <div class="ratings">
+          <div class="rating-box">
+            <div class="label">Ratings</div>
+            <div class="bars" id="bars"></div>
+          </div>
+          <div class="rating-big">
+            <div class="label">Rating</div>
+            <div class="score" id="score">—</div>
+            <div class="stars" id="stars"></div>
+          </div>
+        </div>
+
+        <div class="section-head">
+          <h2>All Reviews</h2>
+          <a class="link" href="/review/{{game_id}}">Write one</a>
+        </div>
+        <div id="reviews" class="review-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+  <script>
+    loadGameDetail({{game_id}});
+  </script>
+</body>
+</html>
