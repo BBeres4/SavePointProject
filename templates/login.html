@@ -6,32 +6,49 @@
   <title>Login • GameBoxd</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
+
 <body class="login-bg">
-  <main class="login-card">
-    <h1>Login</h1>
+  <main class="login-wrap">
+    <div class="login-card">
+      <h1 class="login-title">Login</h1>
 
-    {% if error %}
-      <div class="error">{{ error }}</div>
-    {% endif %}
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% endif %}
 
-    <form method="POST" class="form">
-      <label class="field">
-        <span class="icon">👤</span>
-        <input name="username" placeholder="Username" autocomplete="username" required />
-      </label>
+      <form method="POST" class="login-form">
+        <div class="input-pill">
+          <span class="pill-icon">👤</span>
+          <input
+            name="username"
+            placeholder="Username"
+            autocomplete="username"
+            required
+          />
+        </div>
 
-      <label class="field">
-        <span class="icon">🔒</span>
-        <input name="password" type="password" placeholder="Password" autocomplete="current-password" required />
-      </label>
+        <div class="input-pill">
+          <span class="pill-icon">🔒</span>
+          <input
+            name="password"
+            type="password"
+            placeholder="Password"
+            autocomplete="current-password"
+            required
+          />
+        </div>
 
-      <button class="primary-btn" type="submit">Login</button>
-      <a class="link" href="#" onclick="alert('Demo project: no password reset yet.')">Forgot Password</a>
+        <div class="login-actions">
+          <button class="primary-btn login-btn" type="submit">Login</button>
+          <a class="link" href="#" onclick="alert('Demo project: no password reset yet.')">Forgot Password</a>
+        </div>
 
-      <p class="hint">
-        (Demo: if the username doesn’t exist, it will auto-create the account.)
-      </p>
-    </form>
+        <p class="hint">
+          (Demo: if the username doesn’t exist, it will auto-create the account.)
+        </p>
+      </form>
+    </div>
   </main>
 </body>
 </html>
+
