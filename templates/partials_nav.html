@@ -1,0 +1,15 @@
+<div class="topbar">
+  <div class="brand">GameBoxd</div>
+
+  <nav class="tabs">
+    <a class="{{ 'active' if active=='home' else '' }}" href="/home">Home</a>
+    <a class="{{ 'active' if active=='games' else '' }}" href="/games">Games</a>
+    <a class="{{ 'active' if active=='lists' else '' }}" href="/lists">Lists</a>
+    <a class="{{ 'active' if active=='profile' else '' }}" href="/profile">Profile</a>
+  </nav>
+
+  <div class="right">
+    <a class="iconbtn" href="/games" title="Search">🔍</a>
+    <a class="logout" href="/logout">Logout</a>
+  </div>
+</div>
