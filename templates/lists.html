@@ -11,13 +11,15 @@
   {% include "partials_nav.html" %}
 
   <div class="page">
-    <div class="section center">
-      <p class="muted">Create Custom List to organize, rank, and share games that matter to you.</p>
-      <button class="primary-btn" id="createList">Create List ＋</button>
+    <div class="lists-top">
+      <button id="createListBtn" class="primary-btn">Create List +</button>
     </div>
 
-    <div class="section">
-      <h2>Your Lists</h2>
+    <div class="lists-center">
+      <div class="lists-help muted">
+        Create Custom List to organize, rank, and share games that matter to you.
+      </div>
+
       <div id="listsGrid" class="lists-grid"></div>
     </div>
   </div>
@@ -28,3 +30,4 @@
   </script>
 </body>
 </html>
+
