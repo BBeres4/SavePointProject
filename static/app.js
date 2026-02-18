@@ -1,5 +1,4 @@
 function imgFromGame(g) {
-  // RAWG uses background_image
   return g?.background_image || "";
 }
 
@@ -11,13 +10,15 @@ function stars(n) {
 
 function cardHTML(game) {
   const img = imgFromGame(game);
-  const year = (game?.released || "").slice(0,4) || "—";
+  const year = (game?.released && ("" + game.released).slice(0, 4)) || "—";
+  const rating = (typeof game.rating === "number" && game.rating > 0) ? game.rating.toFixed(1) : "—";
+
   return `
     <div class="card" onclick="location.href='/game/${game.id}'">
       <img src="${img}" alt="">
       <div class="p">
-        <div class="title">${game.name}</div>
-        <div class="meta">${year} • ⭐ ${game.rating?.toFixed?.(1) ?? "—"}</div>
+        <div class="title">${escapeHtml(game.name)}</div>
+        <div class="meta">${year} • ⭐ ${rating}</div>
       </div>
     </div>
   `;
@@ -33,15 +34,16 @@ async function apiGet(url) {
 async function loadHome() {
   try {
     const trending = await apiGet("/api/trending");
+    const list = trending.results || [];
+
     document.querySelector("#trendingRow").innerHTML =
-      (trending.results || []).slice(0, 8).map(cardHTML).join("");
+      list.slice(0, 8).map(cardHTML).join("");
 
-    // fake "friends" row by reusing trending slice
     document.querySelector("#friendsRow").innerHTML =
-      (trending.results || []).slice(4, 10).map(cardHTML).join("");
+      list.slice(4, 10).map(cardHTML).join("");
 
-    // sample reviews list (uses your DB reviews for a trending game if any exist)
-    const first = (trending.results || [])[0];
+    // show DB reviews for first trending game if any exist
+    const first = list[0];
     if (first) {
       const reviews = await apiGet(`/api/reviews/${first.id}`);
       document.querySelector("#reviewsList").innerHTML =
@@ -50,7 +52,7 @@ async function loadHome() {
           : `<div class="muted">No reviews yet. Click a game → “Rate or Review”.</div>`;
     }
   } catch (e) {
-    document.querySelector("#trendingRow").innerHTML = `<div class="muted">${e.message}</div>`;
+    document.querySelector("#trendingRow").innerHTML = `<div class="muted">${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -60,8 +62,8 @@ function reviewRowHTML(game) {
       <div class="review-left">
         <div class="pfp">👤</div>
         <div>
-          <div class="review-title">${game.name}</div>
-          <div class="muted">Logged by <b>${r.username}</b> <span class="stars">${stars(r.rating)}</span></div>
+          <div class="review-title">${escapeHtml(game.name)}</div>
+          <div class="muted">Logged by <b>${escapeHtml(r.username)}</b> <span class="stars">${stars(r.rating)}</span></div>
           <div class="review-body">${escapeHtml(r.body)}</div>
         </div>
       </div>
@@ -75,15 +77,13 @@ async function loadGamesPage() {
   const searchGrid = document.querySelector("#searchGrid");
   const input = document.querySelector("#searchInput");
 
-  // popular
   try {
     const popular = await apiGet("/api/trending");
     popularGrid.innerHTML = (popular.results || []).slice(0, 12).map(cardHTML).join("");
   } catch (e) {
-    popularGrid.innerHTML = `<div class="muted">${e.message}</div>`;
+    popularGrid.innerHTML = `<div class="muted">${escapeHtml(e.message)}</div>`;
   }
 
-  // search
   let t = null;
   input.addEventListener("input", () => {
     clearTimeout(t);
@@ -94,7 +94,7 @@ async function loadGamesPage() {
         const res = await apiGet(`/api/search?q=${encodeURIComponent(q)}`);
         searchGrid.innerHTML = (res.results || []).map(cardHTML).join("");
       } catch (e) {
-        searchGrid.innerHTML = `<div class="muted">${e.message}</div>`;
+        searchGrid.innerHTML = `<div class="muted">${escapeHtml(e.message)}</div>`;
       }
     }, 250);
   });
@@ -121,18 +121,22 @@ async function loadGameDetail(gameId) {
     hero.style.backgroundImage = `url('${imgFromGame(g)}')`;
     cover.src = imgFromGame(g);
     title.textContent = g.name;
-    subline.textContent = `${g.released?.slice?.(0,4) || "—"} • ${g.developers?.[0]?.name || "Unknown studio"}`;
-    desc.textContent = stripHtml(g.description_raw || g.description || "No description available.");
 
-    // “views/likes” are fake UI numbers like your mockups
-    document.querySelector("#views").textContent = Math.floor((g.added || 1200) * 80 / 10) + "k";
-    document.querySelector("#likes").textContent = Math.floor((g.added || 900) * 60 / 10) + "k";
+    const dev = g.developers?.[0]?.name || "Unknown studio";
+    const year = (g.released && ("" + g.released).slice(0, 4)) || "—";
+    subline.textContent = `${year} • ${dev}`;
+
+    desc.textContent = (g.description_raw || "No description available.");
+
+    // fake UI numbers like your mockups
+    document.querySelector("#views").textContent = Math.floor((g.added || 1200) / 2) + "k";
+    document.querySelector("#likes").textContent = Math.floor((g.added || 900) / 3) + "k";
 
     const rating = (g.rating || 0);
     score.textContent = rating ? rating.toFixed(1) : "—";
     starsEl.textContent = rating ? stars(Math.max(1, Math.min(5, Math.round(rating)))) : "";
 
-    // bars: simple fake distribution based on rating
+    // bars: simple fake distribution
     bars.innerHTML = "";
     const base = rating || 3.5;
     for (let i = 0; i < 10; i++) {
@@ -143,7 +147,7 @@ async function loadGameDetail(gameId) {
       bars.appendChild(div);
     }
 
-    // reviews from DB
+    // DB reviews
     const rr = await apiGet(`/api/reviews/${gameId}`);
     reviews.innerHTML = (rr.reviews || []).length
       ? rr.reviews.map(r => `
@@ -151,7 +155,7 @@ async function loadGameDetail(gameId) {
             <div class="review-left">
               <div class="pfp">👤</div>
               <div>
-                <div class="muted">Logged by <b>${r.username}</b> <span class="stars">${stars(r.rating)}</span></div>
+                <div class="muted">Logged by <b>${escapeHtml(r.username)}</b> <span class="stars">${stars(r.rating)}</span></div>
                 <div class="review-body">${escapeHtml(r.body)}</div>
               </div>
             </div>
@@ -191,7 +195,6 @@ async function loadReviewPage(gameId) {
     title.textContent = g.name;
   } catch (_) {}
 
-  // build stars
   function renderStars() {
     starPicker.innerHTML = "";
     for (let i = 1; i <= 5; i++) {
@@ -255,15 +258,10 @@ async function loadListsPage() {
 }
 
 async function loadProfilePage() {
-  // counts from your DB
   const data = await apiGet("/api/my/lists");
   document.querySelector("#totalLists").textContent = (data.lists || []).length;
-
-  // reviews count: quick trick — fetch reviews for a few trending games and count yours is heavier,
-  // so we keep it simple: just show “—” if not implemented
   document.querySelector("#totalReviews").textContent = "—";
 
-  // fill rows with trending (nice looking)
   try {
     const trending = await apiGet("/api/trending");
     const arr = (trending.results || []).slice(0, 6);
@@ -285,7 +283,7 @@ async function quickAddToDefaultList(game) {
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({
       list_id: playLater.id,
-      game_id: game.id,
+      game_id: String(game.id),
       game_name: game.name,
       game_cover: imgFromGame(game)
     })
@@ -308,7 +306,7 @@ async function openAddToListModal(game) {
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({
       list_id: selected.id,
-      game_id: game.id,
+      game_id: String(game.id),
       game_name: game.name,
       game_cover: imgFromGame(game)
     })
@@ -318,10 +316,6 @@ async function openAddToListModal(game) {
 }
 
 /* ---------- utils ---------- */
-function stripHtml(s) {
-  return (s || "").replace(/<[^>]*>/g, "");
-}
-
 function escapeHtml(str) {
   return (str || "")
     .replaceAll("&","&amp;")
