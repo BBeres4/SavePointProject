@@ -230,36 +230,94 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  background:linear-gradient(rgba(0,0,0,.6), rgba(0,0,0,.6)),
-  url("https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=1400&q=60");
+  background:
+    linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)),
+    url("https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=1600&q=60");
   background-size:cover;
   background-position:center;
 }
 
-.login-card{
-  width:min(460px, 92vw);
-  background:rgba(255,255,255,.95);
-  border-radius:16px;
-  padding:24px;
-  text-align:center;
-  box-shadow: var(--shadow);
+.login-wrap{
+  width: min(560px, 92vw);
+  padding: 18px;
 }
 
-.field{
+.login-card{
+  background: rgba(255,255,255,.92);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 26px 24px;
+  text-align:center;
+  backdrop-filter: blur(8px);
+}
+
+.login-title{
+  margin: 6px 0 18px;
+  font-size: 28px;
+  font-weight: 900;
+  color: #111;
+}
+
+.login-form{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.input-pill{
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:12px;
   background:#fff;
   border-radius:999px;
-  padding:10px 14px;
+  padding: 12px 14px;
   box-shadow: 0 8px 18px rgba(0,0,0,.10);
 }
 
-.field input{
+.pill-icon{
+  width:26px;
+  display:flex;
+  justify-content:center;
+  opacity:.9;
+}
+
+.input-pill input{
   border:none;
   outline:none;
   width:100%;
+  font-size:14px;
+  background:transparent;
 }
+
+.login-actions{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  margin-top: 4px;
+}
+
+.login-btn{
+  width:auto;
+  padding: 10px 18px;
+}
+
+.hint{
+  margin-top:12px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.4;
+}
+
+.error{
+  background:#fee2e2;
+  color:#991b1b;
+  padding:10px 12px;
+  border-radius:12px;
+  margin: 0 0 12px;
+  font-weight:700;
+}
+
 
 /* ---------- BUTTONS / TEXT ---------- */
 
