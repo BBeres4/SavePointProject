@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login • GameBoxd</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body class="login-bg">
+  <div class="login-overlay"></div>
+
+  <main class="login-card">
+    <h1>Login</h1>
+
+    {% if error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" class="form">
+      <label class="field">
+        <span class="icon">👤</span>
+        <input name="username" placeholder="Username" autocomplete="username" required />
+      </label>
+
+      <label class="field">
+        <span class="icon">🔒</span>
+        <input name="password" type="password" placeholder="Password" autocomplete="current-password" required />
+      </label>
+
+      <button class="primary-btn" type="submit">Login</button>
+      <a class="link" href="#" onclick="alert('Demo project: no password reset yet.')">Forgot Password</a>
+
+      <p class="hint">
+        (Demo: if the username doesn’t exist, it will auto-create the account.)
+      </p>
+    </form>
+  </main>
+</body>
+</html>
