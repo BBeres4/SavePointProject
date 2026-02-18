@@ -498,3 +498,109 @@ body{
   .profile-grid{ grid-template-columns:1fr; }
 }
 
+/* ---------- GHOST BUTTON (used on game detail) ---------- */
+.ghost-btn{
+  width:100%;
+  background:transparent;
+  border:2px solid #cfe0ff;
+  color:var(--blue);
+  padding:10px 14px;
+  border-radius:999px;
+  cursor:pointer;
+  font-weight:700;
+}
+
+/* ---------- REVIEW PAGE (layout like mock) ---------- */
+.review-layout{
+  display:grid;
+  grid-template-columns: 320px 1fr;
+  gap:18px;
+  align-items:start;
+}
+
+.review-left{
+  background:var(--card);
+  border-radius: var(--round);
+  box-shadow: var(--shadow);
+  padding:16px;
+}
+
+.review-cover-big{
+  width:100%;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  object-fit:cover;
+}
+
+.review-game-title{
+  font-size:18px;
+  font-weight:900;
+  margin:12px 0 10px;
+}
+
+.review-rating-label{
+  font-weight:900;
+  margin-top:8px;
+}
+
+.star-row{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+
+.star-btn{
+  width:44px;
+  height:44px;
+  border-radius:10px;
+  border:1px solid #d1d5db;
+  background:#fff;
+  cursor:pointer;
+  font-size:22px;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.star-btn.on{
+  border-color:#f59e0b;
+  color:#f59e0b;
+}
+
+.review-rating-hint{
+  margin-top:10px;
+  font-size:12px;
+}
+
+.review-right{
+  background:var(--card);
+  border-radius: var(--round);
+  box-shadow: var(--shadow);
+  padding:16px;
+  min-height: 380px;
+}
+
+.review-form textarea{
+  width:100%;
+  height:300px;
+  border:none;
+  border-radius: 16px;
+  padding:16px;
+  box-shadow: 0 10px 22px rgba(0,0,0,.10);
+  outline:none;
+  resize:none;
+  font-size:14px;
+}
+
+.review-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:14px;
+}
+
+@media (max-width: 980px){
+  .review-layout{
+    grid-template-columns: 1fr;
+  }
+}
