@@ -9,12 +9,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from db import init_db, connect
 
 app = Flask(__name__)
-
-# NOTE: For a school project this is fine. For real apps, use an env var.
-app.secret_key = "dev-secret-change-me"
+app.secret_key = os.environ.get("FLASK_SECRET", "dev-secret-change-me")
 
 CHEAPSHARK_BASE = "https://www.cheapshark.com/api/1.0"
 STEAM_APPDETAILS = "https://store.steampowered.com/api/appdetails"
+
 
 # ---------------- helpers ----------------
 def current_user():
@@ -26,16 +25,18 @@ def current_user():
     conn.close()
     return user
 
+
 def clean_username(u: str) -> str:
     u = (u or "").strip()
     if not re.fullmatch(r"[A-Za-z0-9_]{3,24}", u):
         return ""
     return u
 
+
 def normalize_game(item):
     """
-    Convert CheapShark game/deal item into a RAWG-like shape
-    so your frontend doesn't need big changes.
+    Convert CheapShark items into RAWG-like objects:
+    { id, name, background_image, rating, released, added, steam_appid }
     """
     # Deals endpoint items
     if "dealID" in item and "title" in item:
@@ -43,7 +44,6 @@ def normalize_game(item):
         name = item.get("title", "Unknown")
         img = item.get("thumb") or ""
         rating = float(item.get("dealRating") or 0.0)
-        # Convert dealRating (0-10) => (0-5) approximate
         rating_5 = round(min(5.0, rating / 2.0), 1)
         return {
             "id": str(game_id),
@@ -52,22 +52,19 @@ def normalize_game(item):
             "released": None,
             "rating": rating_5,
             "added": int(float(item.get("savings") or 0) * 10),
-            "steam_appid": item.get("steamAppID")
+            "steam_appid": item.get("steamAppID"),
         }
 
     # Search endpoint items
     if "gameID" in item and ("external" in item or "thumb" in item):
-        game_id = item.get("gameID")
-        name = item.get("external", "Unknown")
-        img = item.get("thumb") or ""
         return {
-            "id": str(game_id),
-            "name": name,
-            "background_image": img,
+            "id": str(item.get("gameID")),
+            "name": item.get("external", "Unknown"),
+            "background_image": item.get("thumb") or "",
             "released": None,
             "rating": 0.0,
             "added": 0,
-            "steam_appid": item.get("steamAppID")
+            "steam_appid": item.get("steamAppID"),
         }
 
     return {
@@ -77,20 +74,13 @@ def normalize_game(item):
         "released": item.get("released"),
         "rating": float(item.get("rating") or 0.0),
         "added": int(item.get("added") or 0),
-        "steam_appid": item.get("steam_appid") or item.get("steamAppID")
+        "steam_appid": item.get("steam_appid") or item.get("steamAppID"),
     }
 
-def get_steam_details(steam_appid: str | None):
-    """
-    Steam Store API is free/no-key. If we have steamAppID we can get:
-    - description
-    - developers
-    - header image
-    - metacritic
-    """
+
+def get_steam_details(steam_appid):
     if not steam_appid:
         return None
-
     try:
         r = requests.get(STEAM_APPDETAILS, params={"appids": steam_appid}, timeout=12)
         data = r.json()
@@ -101,6 +91,7 @@ def get_steam_details(steam_appid: str | None):
     except Exception:
         return None
 
+
 # ---------------- init ----------------
 @app.before_request
 def ensure_db():
@@ -108,10 +99,12 @@ def ensure_db():
         init_db()
         app._db_inited = True
 
+
 # ---------------- auth ----------------
 @app.get("/")
 def index():
     return redirect(url_for("home") if current_user() else url_for("login"))
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -129,7 +122,7 @@ def login():
     conn = connect()
     user = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
 
-    # auto-register if not exists (simple demo)
+    # auto-register (demo)
     if not user:
         pw_hash = generate_password_hash(password)
         conn.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, pw_hash))
@@ -139,7 +132,6 @@ def login():
         # default list
         conn.execute("INSERT INTO lists (user_id, name) VALUES (?, ?)", (user["id"], "Play Later"))
         conn.commit()
-
     else:
         if not check_password_hash(user["password_hash"], password):
             conn.close()
@@ -149,96 +141,113 @@ def login():
     conn.close()
     return redirect(url_for("home"))
 
+
 @app.get("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
 
+
 # ---------------- pages ----------------
 @app.get("/home")
 def home():
-    if not current_user():
+    user = current_user()
+    if not user:
         return redirect(url_for("login"))
-    return render_template("home.html", user=current_user())
+    return render_template("home.html", user=user)
+
 
 @app.get("/games")
 def games():
-    if not current_user():
+    user = current_user()
+    if not user:
         return redirect(url_for("login"))
-    return render_template("games.html", user=current_user())
+    return render_template("games.html", user=user)
+
 
 @app.get("/game/<game_id>")
 def game_detail(game_id):
-    if not current_user():
+    user = current_user()
+    if not user:
         return redirect(url_for("login"))
-    return render_template("game_detail.html", user=current_user(), game_id=game_id)
+    return render_template("game_detail.html", user=user, game_id=game_id)
 
-@app.get("/review/<game_id>")
+
+# ✅ FIXED: Review page now supports POST
+@app.route("/review/<game_id>", methods=["GET", "POST"])
 def review_page(game_id):
-    if not current_user():
+    user = current_user()
+    if not user:
         return redirect(url_for("login"))
-    return render_template("review.html", user=current_user(), game_id=game_id)
+
+    if request.method == "POST":
+        rating = int(request.form.get("rating", 0))
+        body = (request.form.get("body") or "").strip()
+
+        if rating < 1 or rating > 5:
+            return render_template("review.html", user=user, game_id=game_id, error="Please choose a star rating (1–5).")
+
+        if len(body) < 3:
+            return render_template("review.html", user=user, game_id=game_id, error="Please write a review (at least 3 characters).")
+
+        conn = connect()
+        conn.execute("""
+            INSERT INTO reviews (user_id, game_id, rating, body)
+            VALUES (?, ?, ?, ?)
+        """, (user["id"], str(game_id), rating, body))
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for("game_detail", game_id=game_id))
+
+    return render_template("review.html", user=user, game_id=game_id)
+
 
 @app.get("/lists")
 def lists_page():
-    if not current_user():
+    user = current_user()
+    if not user:
         return redirect(url_for("login"))
-    return render_template("lists.html", user=current_user())
+    return render_template("lists.html", user=user)
+
 
 @app.get("/profile")
 def profile_page():
-    if not current_user():
+    user = current_user()
+    if not user:
         return redirect(url_for("login"))
-    return render_template("profile.html", user=current_user())
+    return render_template("profile.html", user=user)
+
 
 # ---------------- GAME API (NO KEY) ----------------
 @app.get("/api/trending")
 def api_trending():
-    """
-    Use CheapShark deals as "trending". We return RAWG-like:
-    { results: [ {id, name, background_image, rating, ...} ] }
-    """
     try:
-        r = requests.get(f"{CHEAPSHARK_BASE}/deals", params={
-            "pageSize": 20,
-            "sortBy": "Deal Rating"
-        }, timeout=12)
+        r = requests.get(f"{CHEAPSHARK_BASE}/deals", params={"pageSize": 20, "sortBy": "Deal Rating"}, timeout=12)
         r.raise_for_status()
-        items = r.json()
-        results = [normalize_game(x) for x in items]
+        results = [normalize_game(x) for x in r.json()]
         return jsonify({"results": results})
     except Exception as e:
         return jsonify({"error": "Failed to load trending", "detail": str(e)}), 500
 
+
 @app.get("/api/search")
 def api_search():
-    """
-    CheapShark search: /games?title=... (no key)
-    Return RAWG-like: { results: [...] }
-    """
     q = (request.args.get("q") or "").strip()
     if not q:
         return jsonify({"results": []})
 
     try:
-        r = requests.get(f"{CHEAPSHARK_BASE}/games", params={
-            "title": q,
-            "limit": 20
-        }, timeout=12)
+        r = requests.get(f"{CHEAPSHARK_BASE}/games", params={"title": q, "limit": 20}, timeout=12)
         r.raise_for_status()
-        items = r.json()
-        results = [normalize_game(x) for x in items]
+        results = [normalize_game(x) for x in r.json()]
         return jsonify({"results": results})
     except Exception as e:
         return jsonify({"error": "Search failed", "detail": str(e)}), 500
 
+
 @app.get("/api/game/<game_id>")
 def api_game(game_id):
-    """
-    CheapShark game lookup gives deals + some info.
-    If it includes steamAppID, we enrich with Steam (description, devs, better image).
-    Return a RAWG-ish detail object your frontend expects.
-    """
     try:
         r = requests.get(f"{CHEAPSHARK_BASE}/games", params={"id": game_id}, timeout=12)
         r.raise_for_status()
@@ -258,38 +267,33 @@ def api_game(game_id):
             "description_raw": "No description available.",
         }
 
-        # Enrich with Steam if possible
         steam = get_steam_details(steam_appid)
         if steam:
-            # Better image
             header = steam.get("header_image")
             if header:
                 base["background_image"] = header
 
-            # Description
             desc = steam.get("short_description") or steam.get("about_the_game")
             if desc:
                 base["description_raw"] = re.sub(r"<[^>]*>", "", desc).strip()
 
-            # Developers
             devs = steam.get("developers") or []
             if devs:
                 base["developers"] = [{"name": devs[0]}]
 
-            # Metacritic -> pretend rating out of 5
             mc = steam.get("metacritic", {}).get("score")
             if mc:
                 base["rating"] = round(min(5.0, mc / 20.0), 1)
 
-            # Release date year
             rd = steam.get("release_date", {}).get("date")
             if rd:
-                base["released"] = rd  # keep as string
+                base["released"] = rd
 
         return jsonify(base)
 
     except Exception as e:
         return jsonify({"error": "Game detail failed", "detail": str(e)}), 500
+
 
 # ---------------- LISTS / REVIEWS (SQLite) ----------------
 @app.get("/api/my/lists")
@@ -320,6 +324,7 @@ def api_my_lists():
     conn.close()
     return jsonify({"lists": out})
 
+
 @app.post("/api/my/lists")
 def api_create_list():
     user = current_user()
@@ -335,6 +340,7 @@ def api_create_list():
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
+
 
 @app.post("/api/my/lists/add")
 def api_add_to_list():
@@ -372,6 +378,7 @@ def api_add_to_list():
 
     return jsonify({"ok": True})
 
+
 @app.get("/api/reviews/<game_id>")
 def api_reviews(game_id):
     conn = connect()
@@ -386,28 +393,7 @@ def api_reviews(game_id):
     conn.close()
     return jsonify({"reviews": [dict(r) for r in rows]})
 
-@app.post("/api/reviews/<game_id>")
-def api_post_review(game_id):
-    user = current_user()
-    if not user:
-        return jsonify({"error": "unauthorized"}), 401
-
-    rating = int(request.json.get("rating") or 0)
-    body = (request.json.get("body") or "").strip()
-
-    if rating < 1 or rating > 5 or len(body) < 3:
-        return jsonify({"error": "rating 1-5 and review text required"}), 400
-
-    conn = connect()
-    conn.execute("""
-        INSERT INTO reviews (user_id, game_id, rating, body)
-        VALUES (?, ?, ?, ?)
-    """, (user["id"], str(game_id), rating, body))
-    conn.commit()
-    conn.close()
-    return jsonify({"ok": True})
 
 # ---------------- run ----------------
 if __name__ == "__main__":
-    # local dev
     app.run(debug=True)
