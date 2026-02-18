@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Review • GameBoxd</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  {% set active='games' %}
+  {% include "partials_nav.html" %}
+
+  <div class="page review-page">
+    <div class="review-left">
+      <img id="cover" class="cover big" alt="cover" />
+      <h2 id="title">Loading…</h2>
+
+      <div class="star-picker" id="starPicker"></div>
+      <div class="muted">Rate The Game</div>
+    </div>
+
+    <div class="review-right">
+      <textarea id="body" placeholder="Write your review..."></textarea>
+      <button id="publish" class="primary-btn">Publish Review</button>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+  <script>
+    loadReviewPage({{game_id}});
+  </script>
+</body>
+</html>
