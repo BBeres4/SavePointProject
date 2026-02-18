@@ -10,24 +10,86 @@
   {% set active='games' %}
   {% include "partials_nav.html" %}
 
-  <div class="page review-page">
-    <div class="review-left">
-      <img id="cover" class="cover big" alt="cover" />
-      <h2 id="title">Loading…</h2>
+  <div class="page">
+    <div class="review-layout">
 
-      <div class="star-picker" id="starPicker"></div>
-      <div class="muted">Rate The Game</div>
-    </div>
+      <!-- LEFT PANEL -->
+      <aside class="review-left">
+        <img id="reviewCover" class="review-cover-big" src="" alt="cover">
+        <h2 id="reviewTitle" class="review-game-title">Loading…</h2>
 
-    <div class="review-right">
-      <textarea id="body" placeholder="Write your review..."></textarea>
-      <button id="publish" class="primary-btn">Publish Review</button>
+        <div class="review-rating-label">Rate The Game</div>
+
+        <div class="star-row" id="starRow">
+          <button type="button" class="star-btn" data-val="1">☆</button>
+          <button type="button" class="star-btn" data-val="2">☆</button>
+          <button type="button" class="star-btn" data-val="3">☆</button>
+          <button type="button" class="star-btn" data-val="4">☆</button>
+          <button type="button" class="star-btn" data-val="5">☆</button>
+        </div>
+
+        <div class="review-rating-hint muted">Click a star to rate</div>
+      </aside>
+
+      <!-- RIGHT PANEL -->
+      <section class="review-right">
+        {% if error %}
+          <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" class="review-form">
+          <input type="hidden" id="ratingInput" name="rating" value="0">
+          <textarea name="body" placeholder="Write your review..." required></textarea>
+
+          <div class="review-actions">
+            <button class="primary-btn" type="submit">Publish Review</button>
+          </div>
+        </form>
+      </section>
+
     </div>
   </div>
 
-  <script src="/static/app.js"></script>
   <script>
-    loadReviewPage({{game_id}});
+    // Injected from Flask
+    const GAME_ID = "{{ game_id }}";
+
+    async function apiGet(url){
+      const r = await fetch(url);
+      const data = await r.json();
+      if(!r.ok) throw new Error(data?.error || "Request failed");
+      return data;
+    }
+
+    function setStars(val){
+      document.querySelectorAll(".star-btn").forEach(btn=>{
+        const n = Number(btn.dataset.val);
+        btn.textContent = (n <= val) ? "★" : "☆";
+        btn.classList.toggle("on", n <= val);
+      });
+      document.getElementById("ratingInput").value = String(val);
+    }
+
+    (async function load(){
+      try{
+        const g = await apiGet(`/api/game/${GAME_ID}`);
+        document.getElementById("reviewTitle").textContent = g.name || "Game";
+        document.getElementById("reviewCover").src = g.background_image || "";
+      }catch(e){
+        document.getElementById("reviewTitle").textContent = "Game";
+      }
+
+      // star clicks
+      document.querySelectorAll(".star-btn").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          setStars(Number(btn.dataset.val));
+        });
+      });
+
+      // default 0
+      setStars(0);
+    })();
   </script>
 </body>
 </html>
+
