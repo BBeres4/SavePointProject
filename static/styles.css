@@ -318,6 +318,155 @@ body{
   font-weight:700;
 }
 
+/* ---------- GAME DETAIL PAGE ---------- */
+
+.gd-hero{
+  height:220px;
+  border-radius: var(--round);
+  box-shadow: var(--shadow);
+  background:#ddd center/cover no-repeat;
+  margin-bottom:18px;
+}
+
+.gd-top{
+  display:grid;
+  grid-template-columns: 260px 1fr;
+  gap:22px;
+  align-items:start;
+}
+
+.gd-left{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.gd-cover{
+  width:100%;
+  border-radius: var(--round);
+  box-shadow: var(--shadow);
+  object-fit:cover;
+}
+
+.gd-icons{
+  display:flex;
+  gap:16px;
+  align-items:center;
+  justify-content:flex-start;
+  margin-top:6px;
+}
+
+.gd-icon{
+  display:flex;
+  gap:6px;
+  align-items:center;
+  font-weight:700;
+}
+
+.gd-btn{
+  width:100%;
+}
+
+.gd-right{
+  min-width:0;
+}
+
+.gd-title h1{
+  margin:0;
+  font-size:34px;
+  font-weight:900;
+}
+
+.gd-sub{
+  margin-top:6px;
+  color:var(--muted);
+  font-weight:700;
+}
+
+.gd-desc{
+  margin-top:14px;
+  color:#222;
+  line-height:1.55;
+  max-width: 760px;
+}
+
+.gd-ratings{
+  display:grid;
+  grid-template-columns: 1fr 240px;
+  gap:16px;
+  margin-top:18px;
+}
+
+.gd-hist, .gd-scorebox{
+  background:var(--card);
+  border-radius: var(--round);
+  box-shadow: var(--shadow);
+  padding:14px;
+}
+
+.gd-label{
+  color:var(--muted);
+  font-weight:800;
+  font-size:12px;
+  letter-spacing:.2px;
+}
+
+.gd-bars{
+  display:flex;
+  align-items:flex-end;
+  gap:6px;
+  height:90px;
+  margin-top:10px;
+}
+
+.gd-bars .bar{
+  width:10px;
+  background:#111;
+  border-radius:6px;
+  opacity:.75;
+}
+
+.gd-score{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  margin-top:12px;
+}
+
+.gd-score #score{
+  font-size:44px;
+  font-weight:900;
+  line-height:1;
+}
+
+.gd-stars{
+  color:#f59e0b;
+  font-size:18px;
+  margin-top:6px;
+}
+
+.gd-reviews{
+  margin-top:18px;
+}
+
+.gd-reviews-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin: 10px 0 12px;
+}
+
+@media (max-width: 980px){
+  .gd-top{
+    grid-template-columns: 1fr;
+  }
+  .gd-ratings{
+    grid-template-columns: 1fr;
+  }
+}
+
+
 
 /* ---------- BUTTONS / TEXT ---------- */
 
