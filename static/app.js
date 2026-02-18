@@ -324,3 +324,76 @@ function escapeHtml(str) {
     .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");
 }
+
+async function loadListsPage(){
+  const grid = document.querySelector("#listsGrid");
+  const btn = document.querySelector("#createListBtn");
+  if(!grid || !btn) return;
+
+  async function refresh(){
+    grid.innerHTML = `<div class="muted">Loading...</div>`;
+    const data = await apiGet("/api/my/lists");
+    const lists = data.lists || [];
+
+    if(!lists.length){
+      grid.innerHTML = `<div class="muted">No lists yet. Click “Create List +”.</div>`;
+      return;
+    }
+
+    grid.innerHTML = lists.map(l => {
+      const imgs = (l.items || []).slice(0,3).map(x => x.game_cover).filter(Boolean);
+      const c1 = imgs[0] || "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=400&q=60";
+      const c2 = imgs[1] || c1;
+      const c3 = imgs[2] || c1;
+
+      return `
+        <div class="list-card">
+          <div class="list-covers">
+            <img class="c1" src="${c1}" alt="">
+            <img class="c2" src="${c2}" alt="">
+            <img class="c3" src="${c3}" alt="">
+          </div>
+          <div class="list-name">${escapeHtml(l.name)}</div>
+          <div class="list-count">${(l.items||[]).length} games</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function openModal(){
+    const wrap = document.createElement("div");
+    wrap.className = "modal-backdrop";
+    wrap.innerHTML = `
+      <div class="modal">
+        <h3>Create List</h3>
+        <input id="newListName" placeholder="List name (ex: Best RPGs)" />
+        <div class="modal-actions">
+          <button class="secondary-btn" id="cancelBtn">Cancel</button>
+          <button class="primary-btn" id="saveBtn">Create</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(wrap);
+
+    wrap.querySelector("#cancelBtn").onclick = () => wrap.remove();
+    wrap.onclick = (e) => { if(e.target === wrap) wrap.remove(); };
+
+    wrap.querySelector("#saveBtn").onclick = async () => {
+      const name = wrap.querySelector("#newListName").value.trim();
+      if(!name) return;
+
+      await fetch("/api/my/lists", {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({name})
+      });
+
+      wrap.remove();
+      refresh();
+    };
+  }
+
+  btn.addEventListener("click", openModal);
+
+  await refresh();
+}
