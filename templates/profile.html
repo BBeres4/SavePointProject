@@ -11,36 +11,62 @@
   {% include "partials_nav.html" %}
 
   <div class="page">
+
+    <!-- PROFILE HEADER CARD -->
     <div class="profile-top">
       <div class="avatar">👤</div>
       <div class="name">{{ user.username }}</div>
 
       <div class="follow">
-        <div><b id="followers">85</b><div class="muted">Followers</div></div>
-        <div><b id="following">60</b><div class="muted">Following</div></div>
+        <div>
+          <b>85</b>
+          <div class="muted">Followers</div>
+        </div>
+        <div>
+          <b>60</b>
+          <div class="muted">Following</div>
+        </div>
       </div>
 
       <div class="metrics">
-        <div><b id="totalGames">200</b><div class="muted">Total Games</div></div>
-        <div><b id="totalLists">—</b><div class="muted">Lists</div></div>
-        <div><b id="totalReviews">—</b><div class="muted">Reviews</div></div>
+        <div>
+          <b>200</b>
+          <div class="muted">Total Games</div>
+        </div>
+        <div>
+          <b id="totalLists">—</b>
+          <div class="muted">Lists</div>
+        </div>
+        <div>
+          <b id="totalReviews">—</b>
+          <div class="muted">Reviews</div>
+        </div>
       </div>
     </div>
 
+    <!-- THREE COLUMNS -->
     <div class="three-cols">
+
+      <!-- FAVORITES -->
       <div class="col">
         <h3>User’s Favorite Games</h3>
-        <div id="favRow" class="game-row"></div>
+        <div id="favRow" class="profile-grid"></div>
       </div>
+
+      <!-- RECENTLY PLAYED -->
       <div class="col">
         <h3>User’s Recently Played Games</h3>
-        <div id="recentRow" class="game-row"></div>
+        <div id="recentRow" class="profile-grid"></div>
       </div>
+
+      <!-- RECENTLY REVIEWED -->
       <div class="col">
         <h3>User’s Recently Reviewed</h3>
         <div id="recentReviews" class="review-list"></div>
       </div>
+
     </div>
+
   </div>
 
   <script src="/static/app.js"></script>
