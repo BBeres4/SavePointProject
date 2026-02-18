@@ -604,3 +604,113 @@ body{
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- LISTS PAGE (FIXED) ---------- */
+
+.lists-top{
+  display:flex;
+  justify-content:center;
+  margin: 6px 0 14px;
+}
+
+.lists-center{
+  text-align:center;
+}
+
+.lists-help{
+  margin: 6px 0 22px;
+  font-weight:700;
+}
+
+.lists-grid{
+  display:flex;
+  justify-content:center;
+  gap:40px;
+  flex-wrap:wrap;
+}
+
+.list-card{
+  width:220px;
+  cursor:pointer;
+  text-align:center;
+}
+
+.list-covers{
+  width:160px;
+  height:130px;
+  margin: 0 auto 10px;
+  position:relative;
+}
+
+.list-covers img{
+  width:110px;
+  height:110px;
+  object-fit:cover;
+  border-radius:18px;
+  box-shadow: var(--shadow);
+  position:absolute;
+  top:10px;
+}
+
+.list-covers img.c1{ left:0; z-index:1; opacity:.95; }
+.list-covers img.c2{ left:25px; z-index:2; opacity:.98; }
+.list-covers img.c3{ left:50px; z-index:3; }
+
+.list-name{
+  font-weight:900;
+  margin-top:6px;
+}
+
+.list-count{
+  color:var(--muted);
+  font-weight:700;
+  margin-top:4px;
+}
+
+/* simple modal */
+.modal-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.35);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+}
+
+.modal{
+  width:min(420px, 92vw);
+  background:var(--card);
+  border-radius: var(--round);
+  box-shadow: var(--shadow);
+  padding:18px;
+}
+
+.modal h3{
+  margin:0 0 10px;
+}
+
+.modal input{
+  width:100%;
+  padding:12px 12px;
+  border-radius:12px;
+  border:1px solid #d1d5db;
+  outline:none;
+}
+
+.modal-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  margin-top:12px;
+}
+
+.secondary-btn{
+  background:#e5e7eb;
+  border:none;
+  padding:10px 14px;
+  border-radius:999px;
+  cursor:pointer;
+  font-weight:800;
+}
+
