@@ -37,10 +37,10 @@ async function loadHome() {
     const list = trending.results || [];
 
     document.querySelector("#trendingRow").innerHTML =
-      list.slice(0, 8).map(cardHTML).join("");
+      list.filter((_, i) => i % 2 === 0).slice(0, 8).map(cardHTML).join("");
 
     document.querySelector("#friendsRow").innerHTML =
-      list.slice(4, 10).map(cardHTML).join("");
+      list.filter((_, i) => i % 2 === 0).slice(4, 10).map(cardHTML).join("");
 
     // show DB reviews for first trending game if any exist
     const first = list[0];
