@@ -33,11 +33,7 @@ async function apiGet(url) {
 
 function removeDuplicateTitles(games) {
   const seen = new Set();
-  const result = []; 
-
-  function shuffle(arr) {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
+  const result = [];
 
   for (const g of games) {
     if (!g.name) continue;
@@ -59,6 +55,9 @@ function removeDuplicateTitles(games) {
   return result;
 }
 
+function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
 async function loadHome() {
   try {
     const trending = await apiGet("/api/trending");
