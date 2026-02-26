@@ -1,5 +1,10 @@
 function imgFromGame(g) {
-  return g?.background_image || "";
+  if (!g?.background_image) return "";
+
+  // Force higher resolution from RAWG CDN
+  return g.background_image
+    .replace("/media/", "/media/crop/600/800/")
+    .replace("crop/600/400", "crop/600/800");
 }
 
 function stars(n) {
