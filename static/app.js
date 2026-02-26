@@ -33,7 +33,11 @@ async function apiGet(url) {
 
 function removeDuplicateTitles(games) {
   const seen = new Set();
-  const result = [];
+  const result = []; 
+
+  function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
 
   for (const g of games) {
     if (!g.name) continue;
@@ -61,11 +65,11 @@ async function loadHome() {
     let list = trending.results || [];
     list = removeDuplicateTitles(list);
     const shuffled = shuffle(list);
-    document.querySelector("#trendingRow").innerHTML =
-      shuffled.filter((_, i) => i % 2 === 0).slice(0, 8).map(cardHTML).join("");
+  document.querySelector("#trendingRow").innerHTML =
+  shuffled.slice(0, 8).map(cardHTML).join("");
 
-    document.querySelector("#friendsRow").innerHTML =
-      shuffled.filter((_, i) => i % 2 === 0).slice(4, 10).map(cardHTML).join("");
+  document.querySelector("#friendsRow").innerHTML =
+  shuffled.slice(8, 16).map(cardHTML).join("");
 
     // show DB reviews for first trending game if any exist
     const first = list[0];
