@@ -264,33 +264,7 @@ async function loadReviewPage(gameId) {
 }
 
 
-  async function refresh() {
-    const data = await apiGet("/api/my/lists");
-    grid.innerHTML = (data.lists || []).map(l => `
-      <div class="list-card">
-        <div class="list-title">${escapeHtml(l.name)}</div>
-        <div class="muted">${l.items.length} games</div>
-        <div class="list-items">
-          ${(l.items || []).slice(0,3).map(it => `<img src="${it.game_cover || ""}" alt="">`).join("")}
-        </div>
-      </div>
-    `).join("") || `<div class="muted">No lists yet.</div>`;
-  }
 
-  createBtn.onclick = async () => {
-    const name = prompt("List name?");
-    if (!name) return;
-    const r = await fetch("/api/my/lists", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({name})
-    });
-    if (!r.ok) return alert("Failed to create list");
-    refresh();
-  };
-
-  refresh();
-}
 
 async function loadProfilePage() {
   const data = await apiGet("/api/my/lists");
