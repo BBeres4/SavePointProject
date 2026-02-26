@@ -107,7 +107,13 @@ async function loadGamesPage() {
 
   try {
     const popular = await apiGet("/api/trending");
-    popularGrid.innerHTML = (popular.results || []).slice(0, 12).map(cardHTML).join("");
+
+let list = popular.results || [];
+list = removeDuplicateTitles(list);
+list = [...list].sort(() => Math.random() - 0.5);
+
+popularGrid.innerHTML =
+  list.slice(0, 12).map(cardHTML).join("");
   } catch (e) {
     popularGrid.innerHTML = `<div class="muted">${escapeHtml(e.message)}</div>`;
   }
@@ -120,7 +126,11 @@ async function loadGamesPage() {
       if (!q) { searchGrid.innerHTML = ""; return; }
       try {
         const res = await apiGet(`/api/search?q=${encodeURIComponent(q)}`);
-        searchGrid.innerHTML = (res.results || []).map(cardHTML).join("");
+        let list = res.results || [];
+  list = removeDuplicateTitles(list);
+
+searchGrid.innerHTML =
+  list.map(cardHTML).join("");
       } catch (e) {
         searchGrid.innerHTML = `<div class="muted">${escapeHtml(e.message)}</div>`;
       }
@@ -253,9 +263,6 @@ async function loadReviewPage(gameId) {
   };
 }
 
-async function loadListsPage() {
-  const grid = document.querySelector("#listsGrid");
-  const createBtn = document.querySelector("#createList");
 
   async function refresh() {
     const data = await apiGet("/api/my/lists");
@@ -292,7 +299,9 @@ async function loadProfilePage() {
 
   try {
     const trending = await apiGet("/api/trending");
-    const arr = (trending.results || []).slice(0, 6);
+    let arr = trending.results || [];
+    arr = removeDuplicateTitles(arr);
+    arr = [...arr].sort(() => Math.random() - 0.5);
     document.querySelector("#favRow").innerHTML = arr.slice(0,4).map(cardHTML).join("");
     document.querySelector("#recentRow").innerHTML = arr.slice(2,6).map(cardHTML).join("");
     document.querySelector("#recentReviews").innerHTML =
