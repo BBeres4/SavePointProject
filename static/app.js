@@ -31,16 +31,41 @@ async function apiGet(url) {
   return data;
 }
 
+function removeDuplicateTitles(games) {
+  const seen = new Set();
+  const result = [];
+
+  for (const g of games) {
+    if (!g.name) continue;
+
+    // Normalize title
+    const baseName = g.name
+      .toLowerCase()
+      .split(":")[0]      // remove subtitles
+      .split(" - ")[0]    // remove edition dash
+      .replace(/deluxe|ultimate|digital|edition/gi, "")
+      .trim();
+
+    if (!seen.has(baseName)) {
+      seen.add(baseName);
+      result.push(g);
+    }
+  }
+
+  return result;
+}
+
 async function loadHome() {
   try {
     const trending = await apiGet("/api/trending");
-    const list = trending.results || [];
-
+    let list = trending.results || [];
+    list = removeDuplicateTitles(list);
+    const shuffled = shuffle(list);
     document.querySelector("#trendingRow").innerHTML =
-      list.filter((_, i) => i % 2 === 0).slice(0, 8).map(cardHTML).join("");
+      shuffled.filter((_, i) => i % 2 === 0).slice(0, 8).map(cardHTML).join("");
 
     document.querySelector("#friendsRow").innerHTML =
-      list.filter((_, i) => i % 2 === 0).slice(4, 10).map(cardHTML).join("");
+      shuffled.filter((_, i) => i % 2 === 0).slice(4, 10).map(cardHTML).join("");
 
     // show DB reviews for first trending game if any exist
     const first = list[0];
