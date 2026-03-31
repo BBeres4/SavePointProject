@@ -731,3 +731,51 @@ body{
   box-shadow: 0 14px 30px rgba(0,0,0,.18);
 }
 
+.settings {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+#settingsBtn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.settings-menu {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  width: 200px;
+  background: #2a2a2a;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  overflow: hidden;
+  z-index: 100;
+}
+
+.settings-menu div {
+  padding: 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.settings-menu div:hover {
+  background: #3a3a3a;
+}
+
+.settings-menu hr {
+  border: none;
+  border-top: 1px solid #444;
+  margin: 5px 0;
+}
+
+.hidden {
+  display: none;
+}
+
+.danger {
+  color: #ff5c5c;
+}
