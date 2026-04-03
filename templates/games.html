@@ -11,25 +11,59 @@
   {% include "partials_nav.html" %}
 
   <div class="page">
-    <div class="games-toolbar">
-      <input id="searchInput" class="search" placeholder="Find A Game..." />
-      <div class="filters">
-        <select disabled><option>Year</option></select>
-        <select disabled><option>Genre</option></select>
-        <select disabled><option>Rating</option></select>
-        <select disabled><option>Other</option></select>
+    <section class="games-hero">
+      <div class="games-hero-overlay"></div>
+      <div class="games-hero-content">
+        <p class="eyebrow">Explore the library</p>
+        <h1>Find your next favorite game.</h1>
+        <p class="hero-text">
+          Browse trending titles, search anything instantly, and discover games worth adding to your lists.
+        </p>
       </div>
-    </div>
+    </section>
 
-    <div class="section">
-      <h2>Popular Games This Week</h2>
-      <div id="popularGrid" class="grid"></div>
-    </div>
+    <section class="games-search-panel">
+      <div class="games-search-head">
+        <div>
+          <p class="section-kicker">Search and discover</p>
+          <h2>Browse Games</h2>
+        </div>
+      </div>
 
-    <div class="section">
-      <h2>Search Results</h2>
-      <div id="searchGrid" class="grid"></div>
-    </div>
+      <div class="games-toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">⌕</span>
+          <input id="searchInput" class="search" placeholder="Search for a game..." />
+        </div>
+
+        <div class="filters">
+          <select disabled><option>Year</option></select>
+          <select disabled><option>Genre</option></select>
+          <select disabled><option>Rating</option></select>
+          <select disabled><option>Other</option></select>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Trending now</p>
+          <h2>Popular Games This Week</h2>
+        </div>
+      </div>
+      <div id="popularGrid" class="grid games-grid"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Live results</p>
+          <h2>Search Results</h2>
+        </div>
+      </div>
+      <div id="searchGrid" class="grid games-grid search-results-grid"></div>
+    </section>
   </div>
 
   <script src="/static/app.js"></script>
