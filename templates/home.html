@@ -11,19 +11,47 @@
   {% include "partials_nav.html" %}
 
   <div class="page">
+    <section class="hero-banner">
+      <div class="hero-copy">
+        <p class="eyebrow">Discover your next favorite game</p>
+        <h1>Track, rate, and share the games you love.</h1>
+        <p class="hero-text">
+          Explore trending titles, see what your friends are playing, and keep all your reviews in one place.
+        </p>
+        <div class="hero-actions">
+          <a href="/games" class="primary-btn">Browse Games</a>
+          <a href="/lists" class="ghost-btn hero-ghost">My Lists</a>
+        </div>
+      </div>
+    </section>
+
     <div class="section">
-      <h2>Trending Games</h2>
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Hot right now</p>
+          <h2>Trending Games</h2>
+        </div>
+      </div>
       <div id="trendingRow" class="game-row"></div>
     </div>
 
     <div class="section">
-      <h2>Popular With Friends <span class="muted">(sample row)</span></h2>
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Your circle</p>
+          <h2>Popular With Friends</h2>
+        </div>
+        <span class="muted">(sample row)</span>
+      </div>
       <div id="friendsRow" class="game-row"></div>
     </div>
 
     <div class="section">
       <div class="section-head">
-        <h2>Friends’ Reviews</h2>
+        <div>
+          <p class="section-kicker">Community</p>
+          <h2>Friends’ Reviews</h2>
+        </div>
         <a class="link" href="/games">See all</a>
       </div>
 
