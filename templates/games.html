@@ -1,80 +1,107 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Games • SavePoint</title>
-  <link rel="stylesheet" href="/static/styles.css" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Games • SavePoint</title>
+<link rel="stylesheet" href="/static/styles.css"/>
 </head>
+
 <body>
-  {% set active='games' %}
-  {% include "partials_nav.html" %}
 
-  <div class="page">
+{% set active='games' %}
+{% include "partials_nav.html" %}
 
-    <!-- SEARCH PANEL -->
-    <section class="games-search-panel">
+<div class="page">
 
-      <div class="games-search-header">
-        <div>
-          <p class="section-kicker">Explore the library</p>
-          <h1 class="page-title">Games</h1>
-        </div>
+<section class="games-search-panel">
 
-        <div class="search-wrap">
-          <span class="search-icon">⌕</span>
-          <input id="searchInput" class="search" placeholder="Search any game..." />
-        </div>
+<div class="games-search-header">
 
-      </div>
+<div>
+<p class="section-kicker">Explore the library</p>
+<h1 class="page-title">Games</h1>
+</div>
 
-      <div class="filters">
-        <select disabled><option>Year</option></select>
-        <select disabled><option>Genre</option></select>
-        <select disabled><option>Rating</option></select>
-        <select disabled><option>Platform</option></select>
-      </div>
+<div class="search-wrap">
+<span class="search-icon">⌕</span>
+<input id="searchInput" class="search" placeholder="Search any game..."/>
+</div>
 
-    </section>
+</div>
 
+<div class="filters">
 
-    <!-- POPULAR -->
-    <section class="section">
+<select id="yearFilter">
+<option value="">Year</option>
+</select>
 
-      <div class="section-head">
-        <div>
-          <p class="section-kicker">Trending now</p>
-          <h2>Popular This Week</h2>
-        </div>
-      </div>
+<select id="genreFilter">
+<option value="">Genre</option>
+</select>
 
-      <div id="popularGrid" class="grid games-grid"></div>
+<select id="ratingFilter">
+<option value="">Rating</option>
+<option value="4.5">4.5+</option>
+<option value="4.0">4.0+</option>
+<option value="3.5">3.5+</option>
+<option value="3.0">3.0+</option>
+</select>
 
-    </section>
+<select id="sortFilter">
+<option value="">Sort</option>
+<option value="rating_desc">Highest Rated</option>
+<option value="rating_asc">Lowest Rated</option>
+<option value="year_desc">Newest</option>
+<option value="year_asc">Oldest</option>
+<option value="name_asc">A-Z</option>
+<option value="name_desc">Z-A</option>
+</select>
 
+</div>
 
-    <!-- SEARCH RESULTS -->
-    <section class="section">
-
-      <div class="section-head">
-        <div>
-          <p class="section-kicker">Live search</p>
-          <h2>Search Results</h2>
-        </div>
-      </div>
-
-      <div id="searchGrid" class="grid games-grid search-results-grid"></div>
-
-    </section>
+</section>
 
 
-  </div>
+<section class="section is-hidden" id="searchSection">
 
-  <script src="/static/app.js"></script>
+<div class="section-head">
 
-  <script>
-    loadGamesPage();
-  </script>
+<div>
+<p class="section-kicker">Live search</p>
+<h2>Search Results</h2>
+</div>
+
+<div id="resultsCount" class="muted"></div>
+
+</div>
+
+<div id="searchGrid" class="grid games-grid search-results-grid"></div>
+
+</section>
+
+
+<section class="section" id="popularSection">
+
+<div class="section-head">
+<div>
+<p class="section-kicker">Trending now</p>
+<h2>Popular This Week</h2>
+</div>
+</div>
+
+<div id="popularGrid" class="grid games-grid"></div>
+
+</section>
+
+
+</div>
+
+<script src="/static/app.js"></script>
+
+<script>
+loadGamesPage();
+</script>
 
 </body>
 </html>
