@@ -11,64 +11,70 @@
   {% include "partials_nav.html" %}
 
   <div class="page">
-    <section class="games-hero">
-      <div class="games-hero-overlay"></div>
-      <div class="games-hero-content">
-        <p class="eyebrow">Explore the library</p>
-        <h1>Find your next favorite game.</h1>
-        <p class="hero-text">
-          Browse trending titles, search anything instantly, and discover games worth adding to your lists.
-        </p>
-      </div>
-    </section>
 
+    <!-- SEARCH PANEL -->
     <section class="games-search-panel">
-      <div class="games-search-head">
-        <div>
-          <p class="section-kicker">Search and discover</p>
-          <h2>Browse Games</h2>
-        </div>
-      </div>
 
-      <div class="games-toolbar">
+      <div class="games-search-header">
+        <div>
+          <p class="section-kicker">Explore the library</p>
+          <h1 class="page-title">Games</h1>
+        </div>
+
         <div class="search-wrap">
           <span class="search-icon">⌕</span>
-          <input id="searchInput" class="search" placeholder="Search for a game..." />
+          <input id="searchInput" class="search" placeholder="Search any game..." />
         </div>
 
-        <div class="filters">
-          <select disabled><option>Year</option></select>
-          <select disabled><option>Genre</option></select>
-          <select disabled><option>Rating</option></select>
-          <select disabled><option>Other</option></select>
-        </div>
       </div>
+
+      <div class="filters">
+        <select disabled><option>Year</option></select>
+        <select disabled><option>Genre</option></select>
+        <select disabled><option>Rating</option></select>
+        <select disabled><option>Platform</option></select>
+      </div>
+
     </section>
 
+
+    <!-- POPULAR -->
     <section class="section">
+
       <div class="section-head">
         <div>
           <p class="section-kicker">Trending now</p>
-          <h2>Popular Games This Week</h2>
+          <h2>Popular This Week</h2>
         </div>
       </div>
+
       <div id="popularGrid" class="grid games-grid"></div>
+
     </section>
 
+
+    <!-- SEARCH RESULTS -->
     <section class="section">
+
       <div class="section-head">
         <div>
-          <p class="section-kicker">Live results</p>
+          <p class="section-kicker">Live search</p>
           <h2>Search Results</h2>
         </div>
       </div>
+
       <div id="searchGrid" class="grid games-grid search-results-grid"></div>
+
     </section>
+
+
   </div>
 
   <script src="/static/app.js"></script>
+
   <script>
     loadGamesPage();
   </script>
+
 </body>
 </html>
