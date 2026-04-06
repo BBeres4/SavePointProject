@@ -731,3 +731,25 @@ body{
   box-shadow: 0 14px 30px rgba(0,0,0,.18);
 }
 
+.profile-top {
+  position: relative;
+}
+
+.settings-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+}
+
+.settings-btn a {
+  text-decoration: none;
+  font-weight: 600;
+  color: #333;
+  background: #eee;
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+.settings-btn a:hover {
+  background: #ddd;
+}

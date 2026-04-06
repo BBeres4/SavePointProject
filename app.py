@@ -218,6 +218,12 @@ def profile_page():
         return redirect(url_for("login"))
     return render_template("profile.html", user=user)
 
+@app.get("/settings")
+def settings_page():
+    user = current_user()
+    if not user:
+        return redirect(url_for("login"))
+    return render_template("settings.html", user=user)
 
 # ---------------- GAME API (NO KEY) ----------------
 @app.get("/api/trending")
