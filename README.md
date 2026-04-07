@@ -21,4 +21,7 @@ how to run
 10) click the "running on 4713.1289.199" type link
 
 
+ignore all this for now:
+python -c "import sqlite3; conn=sqlite3.connect('app.sqlite'); cur=conn.cursor(); [print(r) for r in cur.execute('SELECT id, username, created_at FROM users ORDER BY id')]; conn.close()"
 
+python -c "import sqlite3; conn=sqlite3.connect('app.sqlite'); cur=conn.cursor(); [print(r) for r in cur.execute('SELECT id, username, password_hash, created_at FROM users ORDER BY id')]; conn.close()"
