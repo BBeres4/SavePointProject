@@ -39,7 +39,8 @@
 
           <form method="POST" class="review-form">
             <input type="hidden" id="ratingInput" name="rating" value="0">
-            <textarea name="body" placeholder="Write your review..." required></textarea>
+            <label class="review-input-label" for="reviewBody">Share your thoughts</label>
+            <textarea id="reviewBody" name="body" placeholder="Write your review..." required></textarea>
 
             <div class="review-actions">
               <button class="primary-btn" type="submit">Publish Review</button>
