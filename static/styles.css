@@ -881,6 +881,12 @@ body{
   gap:18px;
 }
 
+.list-card-wrap{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
 .list-card{
   width:100%;
   cursor:pointer;
@@ -937,6 +943,19 @@ body{
   color:var(--blue);
   font-weight:800;
   margin-top:10px;
+}
+
+.list-inline-detail{
+  display:none;
+  background:#ffffff;
+  border:1px solid #dfe7f4;
+  border-radius:16px;
+  padding:10px;
+  box-shadow:0 10px 24px rgba(15,23,42,.08);
+}
+
+.list-card-wrap.open .list-inline-detail{
+  display:block;
 }
 
 .list-detail-modal{
