@@ -11,17 +11,22 @@
   {% include "partials_nav.html" %}
 
   <div class="page">
-    <div class="lists-top">
-      <button id="createListBtn" class="primary-btn">Create List +</button>
-    </div>
-
-    <div class="lists-center">
-      <div class="lists-help muted">
-        Create Custom List to organize, rank, and share games that matter to you.
+    <section class="lists-hero">
+      <div>
+        <p class="section-kicker">Collections</p>
+        <h1 class="page-title">Your Game Lists</h1>
+        <div class="lists-help muted">
+          Create custom lists to organize, rank, and revisit the games that matter to you.
+        </div>
       </div>
+      <button id="createListBtn" class="primary-btn">Create List +</button>
+    </section>
 
-      <div id="listsGrid" class="lists-grid"></div>
+    <div class="lists-hint-card">
+      Click any list to open it and browse all games saved inside.
     </div>
+
+    <div id="listsGrid" class="lists-grid"></div>
   </div>
 
   <script src="/static/app.js"></script>
@@ -30,4 +35,3 @@
   </script>
 </body>
 </html>
-
