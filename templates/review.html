@@ -11,42 +11,42 @@
   {% include "partials_nav.html" %}
 
   <div class="page">
-    <div class="review-layout">
+    <div class="review-shell">
+      <div class="review-kicker">Review Tab</div>
+      <div class="review-layout">
 
-      <!-- LEFT PANEL -->
-      <aside class="review-left">
-        <img id="reviewCover" class="review-cover-big" src="" alt="cover">
-        <h2 id="reviewTitle" class="review-game-title">Loading…</h2>
+        <!-- LEFT PANEL -->
+        <aside class="review-side">
+          <img id="reviewCover" class="review-cover-big" src="" alt="cover">
+          <h2 id="reviewTitle" class="review-game-title">Loading…</h2>
 
-        <div class="review-rating-label">Rate The Game</div>
+          <div class="review-rating-label">Rate The Game</div>
 
-        <div class="star-row" id="starRow">
-          <button type="button" class="star-btn" data-val="1">☆</button>
-          <button type="button" class="star-btn" data-val="2">☆</button>
-          <button type="button" class="star-btn" data-val="3">☆</button>
-          <button type="button" class="star-btn" data-val="4">☆</button>
-          <button type="button" class="star-btn" data-val="5">☆</button>
-        </div>
-
-        <div class="review-rating-hint muted">Click a star to rate</div>
-      </aside>
-
-      <!-- RIGHT PANEL -->
-      <section class="review-right">
-        {% if error %}
-          <div class="error">{{ error }}</div>
-        {% endif %}
-
-        <form method="POST" class="review-form">
-          <input type="hidden" id="ratingInput" name="rating" value="0">
-          <textarea name="body" placeholder="Write your review..." required></textarea>
-
-          <div class="review-actions">
-            <button class="primary-btn" type="submit">Publish Review</button>
+          <div class="star-row" id="starRow">
+            <button type="button" class="star-btn" data-val="1">☆</button>
+            <button type="button" class="star-btn" data-val="2">☆</button>
+            <button type="button" class="star-btn" data-val="3">☆</button>
+            <button type="button" class="star-btn" data-val="4">☆</button>
+            <button type="button" class="star-btn" data-val="5">☆</button>
           </div>
-        </form>
-      </section>
+        </aside>
 
+        <!-- RIGHT PANEL -->
+        <section class="review-right">
+          {% if error %}
+            <div class="error">{{ error }}</div>
+          {% endif %}
+
+          <form method="POST" class="review-form">
+            <input type="hidden" id="ratingInput" name="rating" value="0">
+            <textarea name="body" placeholder="Write your review..." required></textarea>
+
+            <div class="review-actions">
+              <button class="primary-btn" type="submit">Publish Review</button>
+            </div>
+          </form>
+        </section>
+      </div>
     </div>
   </div>
 
@@ -92,4 +92,3 @@
   </script>
 </body>
 </html>
-
