@@ -95,31 +95,109 @@ async function loadHome(){
     const shuffled=shuffle(list);
 
     const trendingRow=document.querySelector("#trendingRow");
-    const friendsRow=document.querySelector("#friendsRow");
-    const reviewsList=document.querySelector("#reviewsList");
+    const activityFeed=document.querySelector("#activityFeed");
 
     if(trendingRow){
       trendingRow.innerHTML=shuffled.slice(0,8).map(cardHTML).join("");
     }
 
-    if(friendsRow){
-      friendsRow.innerHTML=shuffled.slice(8,16).map(cardHTML).join("");
+    try{
+      const feed=await apiGet("/api/activity/feed");
+      if(activityFeed){
+        activityFeed.innerHTML=(feed.activities||[]).length
+          ? (feed.activities||[]).map(x=>{
+              if(x.type==="review"){
+                return `
+                  <div class="activity-card">
+                    <div class="activity-head"><b>${escapeHtml(x.username)}</b> reviewed a game</div>
+                    <div class="activity-body">${stars(Number(x.rating||0))} — ${escapeHtml((x.body||"").slice(0,180))}</div>
+                    <a class="link" href="/game/${x.game_id}">Open game</a>
+                  </div>
+                `;
+              }
+              return `
+                <div class="activity-card">
+                  <div class="activity-head"><b>${escapeHtml(x.username)}</b> added to Play Later</div>
+                  <div class="activity-body">${escapeHtml(x.body||"")}</div>
+                  <a class="link" href="/game/${x.game_id}">Open game</a>
+                </div>
+              `;
+            }).join("")
+          : `<div class="muted">Follow people to see reviews and Play Later updates here.</div>`;
+      }
+    }catch(_){
+      if(activityFeed){
+        activityFeed.innerHTML=`<div class="muted">Could not load activity feed.</div>`;
+      }
     }
 
-    const first=list[0];
-    if(first&&reviewsList){
-      const reviews=await apiGet(`/api/reviews/${first.id}`);
-      reviewsList.innerHTML=
-        (reviews.reviews||[]).length
-          ? reviews.reviews.map(reviewRowHTML(first)).join("")
-          : `<div class="muted">No reviews yet. Click a game → “Rate or Review”.</div>`;
-    }
+    initFriendsUI();
   }catch(e){
     const trendingRow=document.querySelector("#trendingRow");
     if(trendingRow){
       trendingRow.innerHTML=`<div class="muted">${escapeHtml(e.message)}</div>`;
     }
   }
+}
+
+async function initFriendsUI(){
+  const input=document.querySelector("#friendSearchInput");
+  const btn=document.querySelector("#friendSearchBtn");
+  const results=document.querySelector("#friendSearchResults");
+  const pills=document.querySelector("#friendsListPills");
+  if(!input||!btn||!results||!pills) return;
+
+  async function loadPills(){
+    const data=await apiGet("/api/friends");
+    pills.innerHTML=(data.friends||[]).length
+      ? data.friends.map(f=>`<span class="friend-pill">${escapeHtml(f.username)}</span>`).join("")
+      : `<span class="muted">No friends yet.</span>`;
+  }
+
+  async function runSearch(){
+    const q=input.value.trim();
+    if(q.length<2){
+      results.innerHTML=`<div class="muted">Type at least 2 letters.</div>`;
+      return;
+    }
+    const data=await apiGet(`/api/friends/search?q=${encodeURIComponent(q)}`);
+    const rows=data.results||[];
+    if(!rows.length){
+      results.innerHTML=`<div class="muted">No users found.</div>`;
+      return;
+    }
+    results.innerHTML=rows.map(u=>`
+      <div class="friend-result-row">
+        <div>@${escapeHtml(u.username)}</div>
+        <button class="secondary-btn friend-follow-btn" data-id="${u.id}" data-following="${u.following?1:0}">
+          ${u.following?"Unfollow":"Follow"}
+        </button>
+      </div>
+    `).join("");
+
+    results.querySelectorAll(".friend-follow-btn").forEach(b=>{
+      b.addEventListener("click",async()=>{
+        const id=b.dataset.id;
+        const following=b.dataset.following==="1";
+        await fetch(following?"/api/friends/unfollow":"/api/friends/follow",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({friend_id:id})
+        });
+        await loadPills();
+        await runSearch();
+      });
+    });
+  }
+
+  btn.addEventListener("click",runSearch);
+  input.addEventListener("keydown",(e)=>{
+    if(e.key==="Enter"){
+      e.preventDefault();
+      runSearch();
+    }
+  });
+  await loadPills();
 }
 
 async function loadGamesPage(){
@@ -374,11 +452,76 @@ async function loadGameDetail(gameId){
                     <span class="stars">${stars(r.rating)}</span>
                   </div>
                   <div class="review-body">${escapeHtml(r.body)}</div>
+                  <div class="review-social">
+                    <button class="secondary-btn review-like-btn" data-review-id="${r.id}">
+                      ${r.liked_by_me ? "💙" : "🤍"} Like (${r.likes_count||0})
+                    </button>
+                    <button class="secondary-btn review-comments-toggle" data-review-id="${r.id}">
+                      💬 Comments (${r.comments_count||0})
+                    </button>
+                  </div>
+                  <div class="review-comments-box" id="comments-${r.id}"></div>
                 </div>
               </div>
             </div>
           `).join("")
         : `<div class="muted">No reviews yet — be the first.</div>`;
+
+      reviews.querySelectorAll(".review-like-btn").forEach(btn=>{
+        btn.addEventListener("click",async()=>{
+          const reviewId=btn.dataset.reviewId;
+          const res=await fetch(`/api/review/${reviewId}/like`,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({})
+          });
+          const data=await res.json();
+          btn.textContent=`${data.liked ? "💙":"🤍"} Like (${data.likes_count||0})`;
+        });
+      });
+
+      reviews.querySelectorAll(".review-comments-toggle").forEach(btn=>{
+        btn.addEventListener("click",async()=>{
+          const reviewId=btn.dataset.reviewId;
+          const box=document.querySelector(`#comments-${reviewId}`);
+          if(!box) return;
+
+          if(box.dataset.open==="1"){
+            box.innerHTML="";
+            box.dataset.open="0";
+            return;
+          }
+
+          const data=await apiGet(`/api/review/${reviewId}/comments`);
+          const comments=data.comments||[];
+          box.innerHTML=`
+            <div class="review-comments-list">
+              ${comments.length
+                ? comments.map(c=>`<div class="review-comment"><b>${escapeHtml(c.username)}:</b> ${escapeHtml(c.body)}</div>`).join("")
+                : `<div class="muted">No comments yet.</div>`
+              }
+            </div>
+            <div class="review-comment-form">
+              <input type="text" class="review-comment-input" placeholder="Write a comment..." />
+              <button class="primary-btn review-comment-send">Post</button>
+            </div>
+          `;
+          box.dataset.open="1";
+          const sendBtn=box.querySelector(".review-comment-send");
+          const input=box.querySelector(".review-comment-input");
+          sendBtn?.addEventListener("click",async()=>{
+            const text=(input?.value||"").trim();
+            if(!text) return;
+            await fetch(`/api/review/${reviewId}/comments`,{
+              method:"POST",
+              headers:{"Content-Type":"application/json"},
+              body:JSON.stringify({body:text})
+            });
+            btn.click();
+            btn.click();
+          });
+        });
+      });
     }
 
     if(reviewBtn){
