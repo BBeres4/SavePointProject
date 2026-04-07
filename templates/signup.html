@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sign Up • SavePoint</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+
+<body class="login-bg">
+  <main class="login-wrap">
+    <div class="login-card">
+      <h1 class="login-title">Create Account</h1>
+
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% endif %}
+
+      <form method="POST" class="login-form">
+        <div class="input-pill">
+          <span class="pill-icon">👤</span>
+          <input
+            name="username"
+            placeholder="Username"
+            autocomplete="username"
+            required
+          />
+        </div>
+
+        <div class="input-pill">
+          <span class="pill-icon">🔒</span>
+          <input
+            name="password"
+            type="password"
+            placeholder="Password (min 6 chars)"
+            autocomplete="new-password"
+            required
+          />
+        </div>
+
+        <div class="input-pill">
+          <span class="pill-icon">✅</span>
+          <input
+            name="confirm_password"
+            type="password"
+            placeholder="Confirm password"
+            autocomplete="new-password"
+            required
+          />
+        </div>
+
+        <div class="login-actions">
+          <button class="primary-btn login-btn" type="submit">Create account</button>
+          <a class="link" href="/login">Back to login</a>
+        </div>
+      </form>
+    </div>
+  </main>
+</body>
+</html>
