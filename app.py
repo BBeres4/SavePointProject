@@ -33,6 +33,14 @@ def clean_username(u: str) -> str:
     return u
 
 
+def is_following(conn, follower_id, following_id):
+    row = conn.execute(
+        "SELECT 1 FROM friendships WHERE follower_id = ? AND following_id = ?",
+        (follower_id, following_id)
+    ).fetchone()
+    return bool(row)
+
+
 def normalize_game(item):
     """
     Convert CheapShark items into RAWG-like objects:
@@ -416,6 +424,7 @@ def api_add_to_list():
 
 @app.get("/api/reviews/<game_id>")
 def api_reviews(game_id):
+    me = current_user()
     conn = connect()
     rows = conn.execute("""
         SELECT r.*, u.username
@@ -425,8 +434,223 @@ def api_reviews(game_id):
         ORDER BY r.created_at DESC
         LIMIT 20
     """, (str(game_id),)).fetchall()
+    out = []
+    for r in rows:
+        review_id = r["id"]
+        likes_count = conn.execute(
+            "SELECT COUNT(*) AS c FROM review_likes WHERE review_id = ?",
+            (review_id,)
+        ).fetchone()["c"]
+        comments_count = conn.execute(
+            "SELECT COUNT(*) AS c FROM review_comments WHERE review_id = ?",
+            (review_id,)
+        ).fetchone()["c"]
+        liked_by_me = False
+        if me:
+            liked_by_me = bool(conn.execute(
+                "SELECT 1 FROM review_likes WHERE review_id = ? AND user_id = ?",
+                (review_id, me["id"])
+            ).fetchone())
+
+        payload = dict(r)
+        payload["likes_count"] = likes_count
+        payload["comments_count"] = comments_count
+        payload["liked_by_me"] = liked_by_me
+        out.append(payload)
+
     conn.close()
-    return jsonify({"reviews": [dict(r) for r in rows]})
+    return jsonify({"reviews": out})
+
+
+@app.get("/api/friends")
+def api_friends():
+    me = current_user()
+    if not me:
+        return jsonify({"error": "unauthorized"}), 401
+
+    conn = connect()
+    rows = conn.execute("""
+        SELECT u.id, u.username
+        FROM friendships f
+        JOIN users u ON u.id = f.following_id
+        WHERE f.follower_id = ?
+        ORDER BY f.created_at DESC
+    """, (me["id"],)).fetchall()
+    conn.close()
+    return jsonify({"friends": [dict(r) for r in rows]})
+
+
+@app.get("/api/friends/search")
+def api_friends_search():
+    me = current_user()
+    if not me:
+        return jsonify({"error": "unauthorized"}), 401
+
+    q = (request.args.get("q") or "").strip()
+    if len(q) < 2:
+        return jsonify({"results": []})
+
+    conn = connect()
+    rows = conn.execute("""
+        SELECT id, username
+        FROM users
+        WHERE username LIKE ? AND id != ?
+        ORDER BY username ASC
+        LIMIT 10
+    """, (f"%{q}%", me["id"])).fetchall()
+
+    out = []
+    for r in rows:
+        x = dict(r)
+        x["following"] = is_following(conn, me["id"], r["id"])
+        out.append(x)
+    conn.close()
+    return jsonify({"results": out})
+
+
+@app.post("/api/friends/follow")
+def api_friends_follow():
+    me = current_user()
+    if not me:
+        return jsonify({"error": "unauthorized"}), 401
+
+    following_id = request.json.get("friend_id")
+    if not following_id:
+        return jsonify({"error": "missing friend_id"}), 400
+    if int(following_id) == int(me["id"]):
+        return jsonify({"error": "cannot follow yourself"}), 400
+
+    conn = connect()
+    try:
+        conn.execute(
+            "INSERT INTO friendships (follower_id, following_id) VALUES (?, ?)",
+            (me["id"], int(following_id))
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        pass
+    finally:
+        conn.close()
+    return jsonify({"ok": True})
+
+
+@app.post("/api/friends/unfollow")
+def api_friends_unfollow():
+    me = current_user()
+    if not me:
+        return jsonify({"error": "unauthorized"}), 401
+
+    following_id = request.json.get("friend_id")
+    if not following_id:
+        return jsonify({"error": "missing friend_id"}), 400
+
+    conn = connect()
+    conn.execute(
+        "DELETE FROM friendships WHERE follower_id = ? AND following_id = ?",
+        (me["id"], int(following_id))
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+@app.get("/api/activity/feed")
+def api_activity_feed():
+    me = current_user()
+    if not me:
+        return jsonify({"error": "unauthorized"}), 401
+
+    conn = connect()
+    rows = conn.execute("""
+        SELECT 'review' AS type, r.created_at AS at, r.id AS ref_id,
+               r.game_id, r.rating, r.body, u.username, u.id AS user_id
+        FROM reviews r
+        JOIN friendships f ON f.following_id = r.user_id
+        JOIN users u ON u.id = r.user_id
+        WHERE f.follower_id = ?
+
+        UNION ALL
+
+        SELECT 'play_later_add' AS type, li.added_at AS at, li.id AS ref_id,
+               li.game_id, NULL AS rating, li.game_name AS body, u.username, u.id AS user_id
+        FROM list_items li
+        JOIN lists l ON l.id = li.list_id
+        JOIN friendships f ON f.following_id = l.user_id
+        JOIN users u ON u.id = l.user_id
+        WHERE f.follower_id = ? AND lower(l.name) = 'play later'
+
+        ORDER BY at DESC
+        LIMIT 30
+    """, (me["id"], me["id"])).fetchall()
+    conn.close()
+    return jsonify({"activities": [dict(r) for r in rows]})
+
+
+@app.post("/api/review/<int:review_id>/like")
+def api_review_like(review_id):
+    me = current_user()
+    if not me:
+        return jsonify({"error": "unauthorized"}), 401
+
+    conn = connect()
+    existing = conn.execute(
+        "SELECT id FROM review_likes WHERE review_id = ? AND user_id = ?",
+        (review_id, me["id"])
+    ).fetchone()
+    if existing:
+        conn.execute("DELETE FROM review_likes WHERE id = ?", (existing["id"],))
+        liked = False
+    else:
+        conn.execute(
+            "INSERT INTO review_likes (review_id, user_id) VALUES (?, ?)",
+            (review_id, me["id"])
+        )
+        liked = True
+    conn.commit()
+    likes_count = conn.execute(
+        "SELECT COUNT(*) AS c FROM review_likes WHERE review_id = ?",
+        (review_id,)
+    ).fetchone()["c"]
+    conn.close()
+    return jsonify({"ok": True, "liked": liked, "likes_count": likes_count})
+
+
+@app.get("/api/review/<int:review_id>/comments")
+def api_review_comments(review_id):
+    me = current_user()
+    if not me:
+        return jsonify({"error": "unauthorized"}), 401
+
+    conn = connect()
+    rows = conn.execute("""
+        SELECT rc.id, rc.body, rc.created_at, u.username
+        FROM review_comments rc
+        JOIN users u ON u.id = rc.user_id
+        WHERE rc.review_id = ?
+        ORDER BY rc.created_at ASC
+    """, (review_id,)).fetchall()
+    conn.close()
+    return jsonify({"comments": [dict(r) for r in rows]})
+
+
+@app.post("/api/review/<int:review_id>/comments")
+def api_review_comment_add(review_id):
+    me = current_user()
+    if not me:
+        return jsonify({"error": "unauthorized"}), 401
+
+    body = (request.json.get("body") or "").strip()
+    if len(body) < 1:
+        return jsonify({"error": "comment required"}), 400
+
+    conn = connect()
+    conn.execute(
+        "INSERT INTO review_comments (review_id, user_id, body) VALUES (?, ?, ?)",
+        (review_id, me["id"], body)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
 
 
 # ---------------- run ----------------
