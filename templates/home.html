@@ -39,23 +39,28 @@
       <div class="section-head">
         <div>
           <p class="section-kicker">Your circle</p>
-          <h2>Popular With Friends</h2>
+          <h2>Friends Hub</h2>
         </div>
-        <span class="muted">(sample row)</span>
       </div>
-      <div id="friendsRow" class="game-row"></div>
+      <div class="friends-panel">
+        <div class="friends-search-row">
+          <input id="friendSearchInput" class="search" placeholder="Find users by username..." />
+          <button id="friendSearchBtn" class="primary-btn" type="button">Find</button>
+        </div>
+        <div id="friendSearchResults" class="friend-search-results"></div>
+        <div id="friendsListPills" class="friends-pills"></div>
+      </div>
     </div>
 
     <div class="section">
       <div class="section-head">
         <div>
-          <p class="section-kicker">Community</p>
-          <h2>Friends’ Reviews</h2>
+          <p class="section-kicker">Community Feed</p>
+          <h2>Friend Activity</h2>
         </div>
-        <a class="link" href="/games">See all</a>
       </div>
 
-      <div id="reviewsList" class="review-list"></div>
+      <div id="activityFeed" class="activity-feed"></div>
     </div>
   </div>
 
