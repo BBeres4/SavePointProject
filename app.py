@@ -129,25 +129,50 @@ def login():
 
     conn = connect()
     user = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-
-    # auto-register (demo)
-    if not user:
-        pw_hash = generate_password_hash(password)
-        conn.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, pw_hash))
-        conn.commit()
-        user = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-
-        # default list
-        conn.execute("INSERT INTO lists (user_id, name) VALUES (?, ?)", (user["id"], "Play Later"))
-        conn.commit()
-    else:
-        if not check_password_hash(user["password_hash"], password):
-            conn.close()
-            return render_template("login.html", error="Wrong username or password.")
+    if not user or not check_password_hash(user["password_hash"], password):
+        conn.close()
+        return render_template("login.html", error="Wrong username or password.")
 
     session["user_id"] = user["id"]
     conn.close()
     return redirect(url_for("home"))
+
+
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    if request.method == "GET":
+        if current_user():
+            return redirect(url_for("home"))
+        return render_template("signup.html")
+
+    username = clean_username(request.form.get("username"))
+    password = request.form.get("password", "")
+    confirm = request.form.get("confirm_password", "")
+
+    if not username:
+        return render_template("signup.html", error="Username must be 3-24 characters (letters, numbers, underscore).")
+
+    if len(password) < 6:
+        return render_template("signup.html", error="Password must be at least 6 characters.")
+
+    if password != confirm:
+        return render_template("signup.html", error="Passwords do not match.")
+
+    conn = connect()
+    existing = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
+    if existing:
+        conn.close()
+        return render_template("signup.html", error="Username is already taken.")
+
+    pw_hash = generate_password_hash(password)
+    conn.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, pw_hash))
+    conn.commit()
+    user = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+    conn.execute("INSERT INTO lists (user_id, name) VALUES (?, ?)", (user["id"], "Play Later"))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("login"))
 
 
 @app.get("/logout")
