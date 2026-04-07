@@ -650,15 +650,44 @@ body{
 /* ---------- REVIEW PAGE ---------- */
 
 .review-shell{
-  background:linear-gradient(145deg,#eef2f8,#e8edf5);
+  background:linear-gradient(145deg,#f5f8ff,#edf3ff 55%,#e9f0ff);
   border-radius:28px;
-  border:1px solid #d7dee9;
-  box-shadow:0 14px 34px rgba(15,23,42,.10);
+  border:1px solid #d4dded;
+  box-shadow:0 16px 36px rgba(15,23,42,.11);
   padding:20px 24px 24px;
 }
 
+.review-head{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:8px;
+}
+
+.review-back{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  text-decoration:none;
+  color:#1d4ed8;
+  font-weight:800;
+  font-size:13px;
+  background:#fff;
+  border:1px solid #c8d7ff;
+  border-radius:999px;
+  padding:8px 12px;
+  box-shadow:0 4px 12px rgba(29,78,216,.12);
+  transition:.2s ease;
+}
+
+.review-back:hover{
+  transform:translateY(-1px);
+  box-shadow:0 8px 18px rgba(29,78,216,.18);
+}
+
 .review-kicker{
-  margin:0 0 14px;
+  margin:0;
   color:#7a8799;
   font-weight:800;
   letter-spacing:.3px;
@@ -676,7 +705,7 @@ body{
   background:#fff;
   border:1px solid #e2e8f0;
   border-radius:22px;
-  box-shadow:0 8px 18px rgba(15,23,42,.07);
+  box-shadow:0 10px 24px rgba(15,23,42,.08);
   padding:16px 14px;
   display:flex;
   flex-direction:column;
@@ -745,10 +774,10 @@ body{
 }
 
 .review-right{
-  background:#f3f6fb;
+  background:#f7faff;
   border-radius:22px;
   border:1px solid #d9e2ef;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 8px 24px rgba(15,23,42,.06);
   padding:14px;
   min-height:500px;
 }
@@ -764,10 +793,10 @@ body{
 .review-form textarea{
   width:100%;
   height:390px;
-  border:1px solid #dbe2ee;
+  border:1px solid #d6deeb;
   border-radius:18px;
   padding:18px 22px;
-  box-shadow:0 6px 16px rgba(15,23,42,.08);
+  box-shadow:0 10px 22px rgba(15,23,42,.08);
   outline:none;
   resize:vertical;
   min-height:280px;
@@ -788,6 +817,11 @@ body{
   display:flex;
   justify-content:flex-end;
   margin-top:14px;
+}
+
+.review-actions .primary-btn{
+  padding:12px 24px;
+  font-size:15px;
 }
 
 /* ---------- LISTS PAGE ---------- */
@@ -1071,6 +1105,10 @@ body{
   .gd-ratings{grid-template-columns:1fr}
   .review-layout{grid-template-columns:1fr}
   .review-shell{padding:16px}
+  .review-head{
+    justify-content:flex-start;
+    margin-bottom:12px;
+  }
   .review-side{
     padding:14px 12px;
     max-width:280px;
