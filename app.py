@@ -218,11 +218,40 @@ def profile_page():
         return redirect(url_for("login"))
     return render_template("profile.html", user=user)
 
-@app.get("/settings")
+@app.route("/settings", methods=["GET", "POST"])
 def settings_page():
     user = current_user()
     if not user:
         return redirect(url_for("login"))
+
+    if request.method == "POST":
+        username = clean_username(request.form.get("username"))
+        password = request.form.get("password")
+
+        if not username:
+            return render_template("settings.html", user=user, error="Invalid username")
+
+        conn = connect()
+
+        # update username
+        conn.execute(
+            "UPDATE users SET username = ? WHERE id = ?",
+            (username, user["id"])
+        )
+
+        # update password if provided
+        if password and len(password) >= 6:
+            pw_hash = generate_password_hash(password)
+            conn.execute(
+                "UPDATE users SET password_hash = ? WHERE id = ?",
+                (pw_hash, user["id"])
+            )
+
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for("profile_page"))
+
     return render_template("settings.html", user=user)
 
 # ---------------- GAME API (NO KEY) ----------------

@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html>
 <head>
@@ -12,15 +13,27 @@
   <div class="page">
     <h2>Settings</h2>
 
+    <!-- ACCOUNT SETTINGS -->
     <div class="settings-section">
       <h3>Account</h3>
-      <p>Update username, email, password, etc.</p>
+
+      <form method="POST">
+        <label>Username</label>
+        <input name="username" value="{{ user.username }}" />
+
+        <label>New Password</label>
+        <input type="password" name="password" placeholder="Leave blank to keep current" />
+
+        <button class="primary-btn" type="submit">Save Changes</button>
+      </form>
     </div>
 
+    <!-- PREFERENCES -->
     <div class="settings-section">
       <h3>Preferences</h3>
-      <p>Theme, notifications, etc.</p>
+      <p>Theme, notifications (coming soon)</p>
     </div>
+
   </div>
 </body>
 </html>

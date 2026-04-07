@@ -1060,3 +1060,20 @@ body{
   .hero-copy h1{font-size:28px}
   .section-head{align-items:flex-start}
 }
+
+.settings-section {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  max-width: 500px;
+}
+
+.settings-section input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0 12px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
