@@ -585,6 +585,19 @@ async function loadListsPage(){
   const btn=document.querySelector("#createListBtn");
   if(!grid||!btn) return;
 
+  function listItemCard(item){
+    const cover=item.game_cover||"https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=400&q=60";
+    return `
+      <div class="list-item-card" onclick="location.href='/game/${item.game_id}'">
+        <img src="${cover}" alt="${escapeHtml(item.game_name||"Game")} cover">
+        <div class="list-item-meta">
+          <div class="list-item-name">${escapeHtml(item.game_name||"Untitled Game")}</div>
+          <div class="list-item-sub muted">Open game page</div>
+        </div>
+      </div>
+    `;
+  }
+
   async function refresh(){
     grid.innerHTML=`<div class="muted">Loading...</div>`;
     const data=await apiGet("/api/my/lists");
@@ -602,17 +615,47 @@ async function loadListsPage(){
       const c3=imgs[2]||c1;
 
       return `
-        <div class="list-card">
-          <div class="list-covers">
-            <img class="c1" src="${c1}" alt="">
-            <img class="c2" src="${c2}" alt="">
-            <img class="c3" src="${c3}" alt="">
+        <div class="list-card-wrap" data-list-id="${l.id}">
+          <button class="list-card list-open-btn" data-list-id="${l.id}" type="button" aria-label="Open ${escapeHtml(l.name)} list">
+            <div class="list-covers">
+              <img class="c1" src="${c1}" alt="">
+              <img class="c2" src="${c2}" alt="">
+              <img class="c3" src="${c3}" alt="">
+            </div>
+            <div class="list-name">${escapeHtml(l.name)}</div>
+            <div class="list-count">${(l.items||[]).length} games</div>
+            <div class="list-open-text">View games ↓</div>
+          </button>
+          <div class="list-inline-detail">
+            ${
+              (l.items||[]).length
+                ? `<div class="list-detail-grid">${(l.items||[]).map(listItemCard).join("")}</div>`
+                : `<div class="muted">No games in this list yet.</div>`
+            }
           </div>
-          <div class="list-name">${escapeHtml(l.name)}</div>
-          <div class="list-count">${(l.items||[]).length} games</div>
         </div>
       `;
     }).join("");
+
+    grid.querySelectorAll(".list-open-btn").forEach(card=>{
+      card.addEventListener("click",()=>{
+        const wrap=card.closest(".list-card-wrap");
+        if(!wrap) return;
+        const isOpen=wrap.classList.contains("open");
+
+        grid.querySelectorAll(".list-card-wrap.open").forEach(w=>{
+          w.classList.remove("open");
+          const openText=w.querySelector(".list-open-text");
+          if(openText) openText.textContent="View games ↓";
+        });
+
+        if(!isOpen){
+          wrap.classList.add("open");
+          const openText=wrap.querySelector(".list-open-text");
+          if(openText) openText.textContent="Hide games ↑";
+        }
+      });
+    });
   }
 
   function openModal(){
