@@ -14,7 +14,7 @@ function stars(n){
 
 function cardHTML(game){
   const img=imgFromGame(game);
-  const year=(game?.released&&(""+game.released).slice(0,4))||"—";
+  const year=game?.released_year||((game?.released&&(""+game.released).match(/(19|20)\d{2}/)?.[0]))||"—";
   const rating=(typeof game.rating==="number"&&game.rating>0)?game.rating.toFixed(1):"—";
 
   return `
@@ -216,11 +216,15 @@ async function loadGamesPage(){
   let activeBaseList=[];
 
   function getYear(g){
-    return (g?.released&&(""+g.released).slice(0,4))||"";
+    if(g?.released_year) return String(g.released_year);
+    const m=(""+(g?.released||"")).match(/(19|20)\d{2}/);
+    return m?m[0]:"";
   }
 
   function getGenres(g){
-    return (g.genres||[]).map(x=>x.name).filter(Boolean);
+    return (g.genres||[])
+      .map(x=>typeof x==="string"?x:x?.name)
+      .filter(Boolean);
   }
 
   function populateYearOptions(list){
