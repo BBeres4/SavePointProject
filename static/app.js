@@ -622,19 +622,44 @@ async function loadProfilePage(){
   if(totalReviews) totalReviews.textContent=stats.reviews ?? 0;
 
   try{
-    const trending=await apiGet("/api/trending");
-    let arr=trending.results||[];
-    arr=removeDuplicateTitles(arr);
-    arr=shuffle(arr);
+    const profile=await apiGet("/api/profile/content");
+    const favorites=profile.favorites||[];
+    const recentlyPlayed=profile.recently_played||[];
+    const recentlyReviewed=profile.recently_reviewed||[];
 
     const favRow=document.querySelector("#favRow");
     const recentRow=document.querySelector("#recentRow");
     const recentReviews=document.querySelector("#recentReviews");
 
-    if(favRow) favRow.innerHTML=arr.slice(0,4).map(cardHTML).join("");
-    if(recentRow) recentRow.innerHTML=arr.slice(2,6).map(cardHTML).join("");
+    if(favRow){
+      favRow.innerHTML=favorites.length
+        ? favorites.slice(0,4).map(cardHTML).join("")
+        : `<div class="muted">No favorite games yet. Add games to a list named “Favorites”.</div>`;
+    }
+    if(recentRow){
+      recentRow.innerHTML=recentlyPlayed.length
+        ? recentlyPlayed.slice(0,4).map(cardHTML).join("")
+        : `<div class="muted">No recently played games yet. Add games to a “Recently Played” list.</div>`;
+    }
     if(recentReviews){
-      recentReviews.innerHTML=`<div class="muted">Open a game and post a review to populate this.</div>`;
+      recentReviews.innerHTML=recentlyReviewed.length
+        ? recentlyReviewed.map(r=>`
+            <div class="review-card">
+              <div class="review-main">
+                <div class="pfp">👤</div>
+                <div>
+                  <div class="review-title">${escapeHtml(r.game_name || `Game #${r.game_id}`)}</div>
+                  <div class="review-meta">
+                    Logged by <b>${escapeHtml(r.username || "You")}</b>
+                    <span class="stars">${stars(Number(r.rating||0))}</span>
+                  </div>
+                  <div class="review-body">${escapeHtml(r.body || "")}</div>
+                </div>
+              </div>
+              <img class="review-cover" src="${escapeHtml(r.game_cover || "")}" alt="${escapeHtml(r.game_name || "Game")} cover">
+            </div>
+          `).join("")
+        : `<div class="muted">Open a game and post a review to populate this.</div>`;
     }
   }catch(_){}
 }
