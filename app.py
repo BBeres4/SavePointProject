@@ -251,6 +251,124 @@ def profile_page():
         return redirect(url_for("login"))
     return render_template("profile.html", user=user)
 
+@app.get("/api/profile/stats")
+def api_profile_stats():
+    me = current_user()
+    if not me:
+        return jsonify({"error": "unauthorized"}), 401
+
+    conn = connect()
+    followers = conn.execute(
+        "SELECT COUNT(*) AS c FROM friendships WHERE following_id = ?",
+        (me["id"],)
+    ).fetchone()["c"]
+    following = conn.execute(
+        "SELECT COUNT(*) AS c FROM friendships WHERE follower_id = ?",
+        (me["id"],)
+    ).fetchone()["c"]
+    lists_count = conn.execute(
+        "SELECT COUNT(*) AS c FROM lists WHERE user_id = ?",
+        (me["id"],)
+    ).fetchone()["c"]
+    reviews_count = conn.execute(
+        "SELECT COUNT(*) AS c FROM reviews WHERE user_id = ?",
+        (me["id"],)
+    ).fetchone()["c"]
+    total_games = conn.execute("""
+        SELECT COUNT(DISTINCT game_id) AS c
+        FROM (
+            SELECT li.game_id AS game_id
+            FROM list_items li
+            JOIN lists l ON l.id = li.list_id
+            WHERE l.user_id = ?
+            UNION
+            SELECT r.game_id AS game_id
+            FROM reviews r
+            WHERE r.user_id = ?
+        )
+    """, (me["id"], me["id"])).fetchone()["c"]
+    conn.close()
+
+    return jsonify({
+        "followers": followers,
+        "following": following,
+        "lists": lists_count,
+        "reviews": reviews_count,
+        "total_games": total_games,
+    })
+
+
+@app.get("/api/profile/content")
+def api_profile_content():
+    me = current_user()
+    if not me:
+        return jsonify({"error": "unauthorized"}), 401
+
+    conn = connect()
+
+    favorite_rows = conn.execute("""
+        SELECT li.game_id, li.game_name, li.game_cover, MAX(li.added_at) AS last_seen
+        FROM list_items li
+        JOIN lists l ON l.id = li.list_id
+        WHERE l.user_id = ? AND lower(l.name) LIKE '%favorite%'
+        GROUP BY li.game_id, li.game_name, li.game_cover
+        ORDER BY last_seen DESC
+        LIMIT 8
+    """, (me["id"],)).fetchall()
+
+    recently_played_rows = conn.execute("""
+        SELECT li.game_id, li.game_name, li.game_cover, MAX(li.added_at) AS last_seen
+        FROM list_items li
+        JOIN lists l ON l.id = li.list_id
+        WHERE l.user_id = ? AND (lower(l.name) LIKE '%played%' OR lower(l.name) LIKE '%recent%')
+        GROUP BY li.game_id, li.game_name, li.game_cover
+        ORDER BY last_seen DESC
+        LIMIT 8
+    """, (me["id"],)).fetchall()
+
+    reviewed_rows = conn.execute("""
+        SELECT r.id, r.game_id, r.rating, r.body, r.created_at, u.username,
+               COALESCE(li.game_name, ('Game #' || r.game_id)) AS game_name,
+               COALESCE(li.game_cover, '') AS game_cover
+        FROM reviews r
+        JOIN users u ON u.id = r.user_id
+        LEFT JOIN (
+            SELECT li1.game_id, li1.game_name, li1.game_cover, l1.user_id, MAX(li1.added_at) AS max_added_at
+            FROM list_items li1
+            JOIN lists l1 ON l1.id = li1.list_id
+            GROUP BY li1.game_id, l1.user_id
+        ) li ON li.game_id = r.game_id AND li.user_id = r.user_id
+        WHERE r.user_id = ?
+        ORDER BY r.created_at DESC
+        LIMIT 8
+    """, (me["id"],)).fetchall()
+    conn.close()
+
+    def as_game(row):
+        return {
+            "id": str(row["game_id"]),
+            "name": row["game_name"] or f"Game #{row['game_id']}",
+            "background_image": row["game_cover"] or "",
+            "released": None,
+            "rating": 0.0,
+            "added": 0,
+        }
+
+    favorites = [as_game(r) for r in favorite_rows]
+    recently_played = [as_game(r) for r in recently_played_rows]
+
+    if not favorites:
+        favorites = [as_game(r) for r in reviewed_rows[:4]]
+    if not recently_played:
+        recently_played = [as_game(r) for r in reviewed_rows[4:8] or reviewed_rows[:4]]
+
+    reviewed = [dict(r) for r in reviewed_rows]
+    return jsonify({
+        "favorites": favorites,
+        "recently_played": recently_played,
+        "recently_reviewed": reviewed,
+    })
+
 @app.route("/settings", methods=["GET", "POST"])
 def settings_page():
     user = current_user()
