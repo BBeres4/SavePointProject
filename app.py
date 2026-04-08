@@ -2,6 +2,7 @@ import os
 import re
 import sqlite3
 import requests
+from datetime import datetime
 
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -41,10 +42,31 @@ def is_following(conn, follower_id, following_id):
     return bool(row)
 
 
+def parse_release_year(raw_date):
+    if not raw_date:
+        return None
+
+    if isinstance(raw_date, int):
+        return raw_date if 1950 <= raw_date <= 2100 else None
+
+    text = str(raw_date).strip()
+    m = re.search(r"(19|20)\d{2}", text)
+    if m:
+        return int(m.group(0))
+
+    for fmt in ("%b %d, %Y", "%d %b, %Y", "%B %d, %Y"):
+        try:
+            return datetime.strptime(text, fmt).year
+        except ValueError:
+            continue
+
+    return None
+
+
 def normalize_game(item):
     """
     Convert CheapShark items into RAWG-like objects:
-    { id, name, background_image, rating, released, added, steam_appid }
+    { id, name, background_image, rating, released, released_year, genres, added, steam_appid }
     """
     # Deals endpoint items
     if "dealID" in item and "title" in item:
@@ -58,6 +80,8 @@ def normalize_game(item):
             "name": name,
             "background_image": img,
             "released": None,
+            "released_year": None,
+            "genres": [],
             "rating": rating_5,
             "added": int(float(item.get("savings") or 0) * 10),
             "steam_appid": item.get("steamAppID"),
@@ -70,21 +94,51 @@ def normalize_game(item):
             "name": item.get("external", "Unknown"),
             "background_image": item.get("thumb") or "",
             "released": None,
+            "released_year": None,
+            "genres": [],
             "rating": 0.0,
             "added": 0,
             "steam_appid": item.get("steamAppID"),
         }
 
+    released = item.get("released")
     return {
         "id": str(item.get("gameID") or item.get("id") or "0"),
         "name": item.get("name") or item.get("title") or "Unknown",
         "background_image": item.get("background_image") or item.get("thumb") or "",
-        "released": item.get("released"),
+        "released": released,
+        "released_year": parse_release_year(released),
+        "genres": item.get("genres") or [],
         "rating": float(item.get("rating") or 0.0),
         "added": int(item.get("added") or 0),
         "steam_appid": item.get("steam_appid") or item.get("steamAppID"),
     }
 
+
+
+
+def enrich_games_with_steam_metadata(games):
+    for g in games:
+        steam_appid = g.get("steam_appid")
+        if not steam_appid:
+            continue
+
+        steam = get_steam_details(steam_appid)
+        if not steam:
+            continue
+
+        release_text = steam.get("release_date", {}).get("date")
+        release_year = parse_release_year(release_text)
+        if release_text and not g.get("released"):
+            g["released"] = release_text
+        if release_year and not g.get("released_year"):
+            g["released_year"] = release_year
+
+        genres = steam.get("genres") or []
+        if genres and not g.get("genres"):
+            g["genres"] = [{"name": x.get("description")} for x in genres if x.get("description")]
+
+    return games
 
 def get_steam_details(steam_appid):
     if not steam_appid:
@@ -412,6 +466,7 @@ def api_trending():
         r = requests.get(f"{CHEAPSHARK_BASE}/deals", params={"pageSize": 20, "sortBy": "Deal Rating"}, timeout=12)
         r.raise_for_status()
         results = [normalize_game(x) for x in r.json()]
+        results = enrich_games_with_steam_metadata(results)
         return jsonify({"results": results})
     except Exception as e:
         return jsonify({"error": "Failed to load trending", "detail": str(e)}), 500
@@ -427,6 +482,7 @@ def api_search():
         r = requests.get(f"{CHEAPSHARK_BASE}/games", params={"title": q, "limit": 20}, timeout=12)
         r.raise_for_status()
         results = [normalize_game(x) for x in r.json()]
+        results = enrich_games_with_steam_metadata(results)
         return jsonify({"results": results})
     except Exception as e:
         return jsonify({"error": "Search failed", "detail": str(e)}), 500
