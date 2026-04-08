@@ -608,13 +608,18 @@ async function loadReviewPage(gameId){
 }
 
 async function loadProfilePage(){
-  const data=await apiGet("/api/my/lists");
-
+  const stats=await apiGet("/api/profile/stats");
   const totalLists=document.querySelector("#totalLists");
   const totalReviews=document.querySelector("#totalReviews");
+  const followersCount=document.querySelector("#followersCount");
+  const followingCount=document.querySelector("#followingCount");
+  const totalGames=document.querySelector("#totalGames");
 
-  if(totalLists) totalLists.textContent=(data.lists||[]).length;
-  if(totalReviews) totalReviews.textContent="—";
+  if(followersCount) followersCount.textContent=stats.followers ?? 0;
+  if(followingCount) followingCount.textContent=stats.following ?? 0;
+  if(totalGames) totalGames.textContent=stats.total_games ?? 0;
+  if(totalLists) totalLists.textContent=stats.lists ?? 0;
+  if(totalReviews) totalReviews.textContent=stats.reviews ?? 0;
 
   try{
     const trending=await apiGet("/api/trending");
