@@ -27,6 +27,10 @@ def current_user():
     return user
 
 
+def normalize_theme(theme: str) -> str:
+    return theme if theme in {"light", "dark"} else "light"
+
+
 def clean_username(u: str) -> str:
     u = (u or "").strip()
     if not re.fullmatch(r"[A-Za-z0-9_]{3,24}", u):
@@ -160,6 +164,14 @@ def ensure_db():
     if not getattr(app, "_db_inited", False):
         init_db()
         app._db_inited = True
+
+
+@app.context_processor
+def inject_theme():
+    user = current_user()
+    if not user:
+        return {"ui_theme": "light"}
+    return {"ui_theme": normalize_theme(user["theme_preference"])}
 
 
 # ---------------- auth ----------------
@@ -432,7 +444,8 @@ def settings_page():
     if request.method == "POST":
         username = clean_username(request.form.get("username"))
         password = request.form.get("password")
-
+        theme_preference = normalize_theme(request.form.get("theme_preference", "light"))
+        
         if not username:
             return render_template("settings.html", user=user, error="Invalid username")
 
@@ -442,6 +455,10 @@ def settings_page():
         conn.execute(
             "UPDATE users SET username = ? WHERE id = ?",
             (username, user["id"])
+        )
+        conn.execute(
+            "UPDATE users SET theme_preference = ? WHERE id = ?",
+            (theme_preference, user["id"])
         )
 
         # update password if provided
