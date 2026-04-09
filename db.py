@@ -18,9 +18,14 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
+        theme_preference TEXT NOT NULL DEFAULT 'light',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
     """)
+
+    user_columns = [row[1] for row in cur.execute("PRAGMA table_info(users);").fetchall()]
+    if "theme_preference" not in user_columns:
+        cur.execute("ALTER TABLE users ADD COLUMN theme_preference TEXT NOT NULL DEFAULT 'light';")
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS lists (
