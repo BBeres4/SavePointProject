@@ -1413,3 +1413,54 @@ body{
   border-radius: 10px;
   border: 1px solid #ccc;
 }
+
+.settings-section select {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0 12px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: var(--text);
+}
+
+body[data-theme="dark"]{
+  --bg:#0b1220;
+  --bg-2:#111b2f;
+  --card:#111827;
+  --text:#e5e7eb;
+  --muted:#94a3b8;
+  --line:#334155;
+  background: radial-gradient(circle at top left,#111827 0%,#0f172a 45%,#020617 100%);
+}
+
+body[data-theme="dark"] .settings-section,
+body[data-theme="dark"] .friends-panel,
+body[data-theme="dark"] .activity-card,
+body[data-theme="dark"] .modal-content,
+body[data-theme="dark"] .login-card,
+body[data-theme="dark"] .profile-top,
+body[data-theme="dark"] .col,
+body[data-theme="dark"] .review-right,
+body[data-theme="dark"] .review-side{
+  background:#0f172a;
+  border-color:#1e293b;
+}
+
+body[data-theme="dark"] .search,
+body[data-theme="dark"] input,
+body[data-theme="dark"] select,
+body[data-theme="dark"] textarea{
+  background:#0b1220;
+  color:#e2e8f0;
+  border-color:#334155;
+}
+
+body[data-theme="dark"] .friend-result-row{
+  background:#0b1220;
+  border-color:#1e293b;
+}
+
+body[data-theme="dark"] .topbar{
+  background:rgba(15,23,42,.94);
+}
