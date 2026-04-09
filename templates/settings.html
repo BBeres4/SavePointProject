@@ -7,7 +7,8 @@
   <title>Settings • SavePoint</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
-<body>
+<body data-theme="{{ ui_theme|default('light') }}">
+  {% set active='profile' %}
   {% include "partials_nav.html" %}
 
   <div class="page">
@@ -24,6 +25,12 @@
         <label>New Password</label>
         <input type="password" name="password" placeholder="Leave blank to keep current" />
 
+          <label>Theme</label>
+        <select name="theme_preference">
+          <option value="light" {% if user.theme_preference == 'light' %}selected{% endif %}>Light mode</option>
+          <option value="dark" {% if user.theme_preference == 'dark' %}selected{% endif %}>Dark mode</option>
+        </select>
+
         <button class="primary-btn" type="submit">Save Changes</button>
       </form>
     </div>
@@ -31,7 +38,7 @@
     <!-- PREFERENCES -->
     <div class="settings-section">
       <h3>Preferences</h3>
-      <p>Theme, notifications (coming soon)</p>
+   <p>Choose your theme preference. Notifications are coming soon.</p>
     </div>
 
   </div>
