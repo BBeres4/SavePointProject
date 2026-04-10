@@ -98,5 +98,27 @@ def init_db():
     );
     """)
 
+        cur.execute("""
+    CREATE TABLE IF NOT EXISTS admins (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS managed_games (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        genre TEXT,
+        platform TEXT,
+        release_year INTEGER,
+        added_by_admin_id INTEGER NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (added_by_admin_id) REFERENCES admins(id) ON DELETE CASCADE
+    );
+    """)
+
     conn.commit()
     conn.close()
