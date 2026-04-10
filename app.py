@@ -27,6 +27,16 @@ def current_user():
     return user
 
 
+def current_admin():
+    aid = session.get("admin_id")
+    if not aid:
+        return None
+    conn = connect()
+    admin = conn.execute("SELECT * FROM admins WHERE id = ?", (aid,)).fetchone()
+    conn.close()
+    return admin
+
+
 def normalize_theme(theme: str) -> str:
     return theme if theme in {"light", "dark"} else "light"
 
@@ -177,7 +187,11 @@ def inject_theme():
 # ---------------- auth ----------------
 @app.get("/")
 def index():
-    return redirect(url_for("home") if current_user() else url_for("login"))
+ if current_user():
+        return redirect(url_for("home"))
+    if current_admin():
+        return redirect(url_for("admin_dashboard"))
+    return redirect(url_for("login"))
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -199,6 +213,7 @@ def login():
         conn.close()
         return render_template("login.html", error="Wrong username or password.")
 
+    session.clear()
     session["user_id"] = user["id"]
     conn.close()
     return redirect(url_for("home"))
@@ -245,6 +260,156 @@ def signup():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "GET":
+        if current_admin():
+            return redirect(url_for("admin_dashboard"))
+        return render_template("admin_login.html")
+
+    username = clean_username(request.form.get("username"))
+    password = request.form.get("password", "")
+    setup_code = (request.form.get("setup_code") or "").strip()
+
+    if not username or len(password) < 6:
+        return render_template("admin_login.html", error="Enter a valid admin username and password.")
+
+    conn = connect()
+    admin = conn.execute("SELECT * FROM admins WHERE username = ?", (username,)).fetchone()
+
+    # First admin bootstrap flow: requires ADMIN_SETUP_CODE if provided.
+    if not admin:
+        expected_setup_code = os.environ.get("ADMIN_SETUP_CODE", "").strip()
+        if expected_setup_code and setup_code != expected_setup_code:
+            conn.close()
+            return render_template("admin_login.html", error="Admin not found. Invalid setup code for admin creation.")
+        pw_hash = generate_password_hash(password)
+        conn.execute(
+            "INSERT INTO admins (username, password_hash) VALUES (?, ?)",
+            (username, pw_hash)
+        )
+        conn.commit()
+        admin = conn.execute("SELECT * FROM admins WHERE username = ?", (username,)).fetchone()
+    elif not check_password_hash(admin["password_hash"], password):
+        conn.close()
+        return render_template("admin_login.html", error="Wrong admin username or password.")
+
+    session.clear()
+    session["admin_id"] = admin["id"]
+    conn.close()
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.get("/admin/logout")
+def admin_logout():
+    session.clear()
+    return redirect(url_for("admin_login"))
+
+
+@app.route("/admin", methods=["GET", "POST"])
+def admin_dashboard():
+    admin = current_admin()
+    if not admin:
+        return redirect(url_for("admin_login"))
+
+    conn = connect()
+    error = None
+    notice = None
+    if request.method == "POST":
+        title = (request.form.get("title") or "").strip()
+        genre = (request.form.get("genre") or "").strip()
+        platform = (request.form.get("platform") or "").strip()
+        release_year_raw = (request.form.get("release_year") or "").strip()
+        release_year = parse_release_year(release_year_raw) if release_year_raw else None
+
+        if len(title) < 2:
+            error = "Game title must be at least 2 characters."
+        else:
+            conn.execute("""
+                INSERT INTO managed_games (title, genre, platform, release_year, added_by_admin_id)
+                VALUES (?, ?, ?, ?, ?)
+            """, (title, genre or None, platform or None, release_year, admin["id"]))
+            conn.commit()
+            notice = f"Added game '{title}' to admin-managed catalog."
+
+    user_count = conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"]
+    reviews_count = conn.execute("SELECT COUNT(*) AS c FROM reviews").fetchone()["c"]
+    lists_count = conn.execute("SELECT COUNT(*) AS c FROM lists").fetchone()["c"]
+    managed_games_count = conn.execute("SELECT COUNT(*) AS c FROM managed_games").fetchone()["c"]
+
+    q = (request.args.get("q") or "").strip()
+    users = []
+    if q:
+        users = conn.execute("""
+            SELECT id, username, created_at
+            FROM users
+            WHERE username LIKE ?
+            ORDER BY username ASC
+            LIMIT 25
+        """, (f"%{q}%",)).fetchall()
+
+    selected_user_id = request.args.get("user_id")
+    selected_user = None
+    activity = []
+    if selected_user_id and str(selected_user_id).isdigit():
+        selected_user = conn.execute(
+            "SELECT id, username, created_at FROM users WHERE id = ?",
+            (int(selected_user_id),)
+        ).fetchone()
+        if selected_user:
+            activity = conn.execute("""
+                SELECT 'review' AS type, r.created_at AS at, r.game_id AS game_ref,
+                       ('Rated ' || r.rating || '/5 - ' || substr(r.body, 1, 80)) AS detail
+                FROM reviews r
+                WHERE r.user_id = ?
+
+                UNION ALL
+
+                SELECT 'list_add' AS type, li.added_at AS at, li.game_id AS game_ref,
+                       ('Added to list: ' || li.game_name) AS detail
+                FROM list_items li
+                JOIN lists l ON l.id = li.list_id
+                WHERE l.user_id = ?
+
+                UNION ALL
+
+                SELECT 'follow' AS type, f.created_at AS at, NULL AS game_ref,
+                       ('Followed user #' || f.following_id) AS detail
+                FROM friendships f
+                WHERE f.follower_id = ?
+
+                ORDER BY at DESC
+                LIMIT 50
+            """, (selected_user["id"], selected_user["id"], selected_user["id"])).fetchall()
+
+    managed_games = conn.execute("""
+        SELECT mg.*, a.username AS admin_username
+        FROM managed_games mg
+        JOIN admins a ON a.id = mg.added_by_admin_id
+        ORDER BY mg.created_at DESC
+        LIMIT 40
+    """).fetchall()
+
+    conn.close()
+    return render_template(
+        "admin_dashboard.html",
+        admin=admin,
+        error=error,
+        notice=notice,
+        metrics={
+            "user_count": user_count,
+            "reviews_count": reviews_count,
+            "lists_count": lists_count,
+            "managed_games_count": managed_games_count,
+        },
+        q=q,
+        users=users,
+        selected_user=selected_user,
+        activity=activity,
+        managed_games=managed_games,
+    )
 
 
 # ---------------- pages ----------------
