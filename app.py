@@ -187,7 +187,7 @@ def inject_theme():
 # ---------------- auth ----------------
 @app.get("/")
 def index():
- if current_user():
+    if current_user():
         return redirect(url_for("home"))
     if current_admin():
         return redirect(url_for("admin_dashboard"))
