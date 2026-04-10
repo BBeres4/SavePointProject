@@ -98,7 +98,7 @@ def init_db():
     );
     """)
 
-        cur.execute("""
+    cur.execute("""
     CREATE TABLE IF NOT EXISTS admins (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
