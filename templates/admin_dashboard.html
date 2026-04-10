@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Dashboard • SavePoint</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body data-theme="light">
+  <main class="container" style="padding-top:24px;padding-bottom:36px;">
+    <section class="card" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div>
+          <h1 style="margin:0;">Admin Dashboard</h1>
+          <p class="muted" style="margin:6px 0 0;">Signed in as <b>{{ admin.username }}</b></p>
+        </div>
+        <a class="link" href="/admin/logout">Logout</a>
+      </div>
+    </section>
+
+    <section class="grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap:12px; margin-bottom:16px;">
+      <article class="card"><h3 style="margin:0 0 4px;">Accounts</h3><div style="font-size:1.5rem;font-weight:700;">{{ metrics.user_count }}</div></article>
+      <article class="card"><h3 style="margin:0 0 4px;">Reviews</h3><div style="font-size:1.5rem;font-weight:700;">{{ metrics.reviews_count }}</div></article>
+      <article class="card"><h3 style="margin:0 0 4px;">Lists</h3><div style="font-size:1.5rem;font-weight:700;">{{ metrics.lists_count }}</div></article>
+      <article class="card"><h3 style="margin:0 0 4px;">Managed Games</h3><div style="font-size:1.5rem;font-weight:700;">{{ metrics.managed_games_count }}</div></article>
+    </section>
+
+    <section class="card" style="margin-bottom:16px;">
+      <h2 style="margin-top:0;">Account Search & Activity</h2>
+      <form method="GET" action="/admin" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <input name="q" value="{{ q }}" placeholder="Search username..." style="flex:1;min-width:220px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);"/>
+        <button class="primary-btn" type="submit">Search</button>
+      </form>
+
+      {% if users %}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          {% for u in users %}
+            <a class="chip" href="/admin?q={{ q }}&user_id={{ u.id }}">{{ u.username }}</a>
+          {% endfor %}
+        </div>
+      {% elif q %}
+        <p class="muted">No matching accounts found.</p>
+      {% endif %}
+
+      {% if selected_user %}
+        <h3 style="margin-bottom:6px;">Activity for {{ selected_user.username }}</h3>
+        <p class="muted" style="margin-top:0;">Joined {{ selected_user.created_at }}</p>
+        {% if activity %}
+          <ul style="padding-left:18px; margin:0;">
+            {% for a in activity %}
+              <li style="margin-bottom:8px;">
+                <b>{{ a.type }}</b> — {{ a.detail }}
+                <span class="muted">({{ a.at }})</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">No activity yet for this account.</p>
+        {% endif %}
+      {% endif %}
+    </section>
+
+    <section class="card" style="margin-bottom:16px;">
+      <h2 style="margin-top:0;">Add Game to System</h2>
+      {% if error %}<div class="error" style="margin-bottom:10px;">{{ error }}</div>{% endif %}
+      {% if notice %}<div class="success" style="margin-bottom:10px;">{{ notice }}</div>{% endif %}
+      <form method="POST" action="/admin" style="display:grid;grid-template-columns: repeat(2, minmax(0, 1fr));gap:10px;">
+        <input name="title" placeholder="Game title" required style="padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);" />
+        <input name="genre" placeholder="Genre" style="padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);" />
+        <input name="platform" placeholder="Platform" style="padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);" />
+        <input name="release_year" placeholder="Release year (optional)" style="padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);" />
+        <div style="grid-column: 1 / -1;"><button class="primary-btn" type="submit">Add Game</button></div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2 style="margin-top:0;">Recently Added Managed Games</h2>
+      {% if managed_games %}
+        <ul style="padding-left:18px;margin:0;">
+          {% for g in managed_games %}
+            <li style="margin-bottom:8px;">
+              <b>{{ g.title }}</b>
+              {% if g.genre %}<span class="muted"> • {{ g.genre }}</span>{% endif %}
+              {% if g.platform %}<span class="muted"> • {{ g.platform }}</span>{% endif %}
+              {% if g.release_year %}<span class="muted"> • {{ g.release_year }}</span>{% endif %}
+              <span class="muted">(by {{ g.admin_username }} on {{ g.created_at }})</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">No managed games yet.</p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>
