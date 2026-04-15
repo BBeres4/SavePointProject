@@ -16,10 +16,12 @@
 </div>
     <!-- PROFILE HEADER CARD -->
     <div class="profile-top">
-      <div class="avatar">👤</div>
-      <div class="name">{{ user.username }}</div>
-<div class="settings-btn">
-  <a href="/settings">⚙️ Settings</a>
+      <div class="avatar">
+  {% if user.profile_pic %}
+    <img src="{{ user.profile_pic }}" alt="avatar">
+  {% else %}
+    <div class="avatar-emoji">🎮</div>
+  {% endif %}
 </div>
       <div class="follow">
         <div>

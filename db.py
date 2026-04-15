@@ -14,18 +14,21 @@ def init_db():
     cur = conn.cursor()
 
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        theme_preference TEXT NOT NULL DEFAULT 'light',
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-    """)
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    theme_preference TEXT NOT NULL DEFAULT 'light',
+    profile_pic TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+""")
 
     user_columns = [row[1] for row in cur.execute("PRAGMA table_info(users);").fetchall()]
     if "theme_preference" not in user_columns:
         cur.execute("ALTER TABLE users ADD COLUMN theme_preference TEXT NOT NULL DEFAULT 'light';")
+    if "profile_pic" not in user_columns:
+        cur.execute("ALTER TABLE users ADD COLUMN profile_pic TEXT;")
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS lists (

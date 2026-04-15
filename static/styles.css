@@ -1485,3 +1485,22 @@ body[data-theme="dark"] .friend-result-row{
 body[data-theme="dark"] .topbar{
   background:rgba(15,23,42,.94);
 }
+
+.avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #2c3e50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar-emoji {
+  font-size: 40px;
+}

@@ -9,7 +9,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from db import init_db, connect
 
-app = Flask(__name__)
+app = Flask(__name__) 
+UPLOAD_FOLDER = "static/uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.secret_key = os.environ.get("FLASK_SECRET", "dev-secret-change-me")
 
 CHEAPSHARK_BASE = "https://www.cheapshark.com/api/1.0"
@@ -610,7 +613,10 @@ def settings_page():
         username = clean_username(request.form.get("username"))
         password = request.form.get("password")
         theme_preference = normalize_theme(request.form.get("theme_preference", "light"))
-        
+
+        file = request.files.get("profile_pic")
+        remove_pic = request.form.get("remove_pic") == "on"
+
         if not username:
             return render_template("settings.html", user=user, error="Invalid username")
 
@@ -621,17 +627,41 @@ def settings_page():
             "UPDATE users SET username = ? WHERE id = ?",
             (username, user["id"])
         )
+
+        # update theme
         conn.execute(
             "UPDATE users SET theme_preference = ? WHERE id = ?",
             (theme_preference, user["id"])
         )
 
-        # update password if provided
+        # update password
         if password and len(password) >= 6:
             pw_hash = generate_password_hash(password)
             conn.execute(
                 "UPDATE users SET password_hash = ? WHERE id = ?",
                 (pw_hash, user["id"])
+            )
+
+        # REMOVE profile pic (emoji fallback)
+        if remove_pic:
+            conn.execute(
+                "UPDATE users SET profile_pic = NULL WHERE id = ?",
+                (user["id"],)
+            )
+
+        # UPLOAD new profile pic
+        elif file and file.filename.lower().endswith((".png", ".jpg", ".jpeg", ".gif")):
+            from werkzeug.utils import secure_filename
+            import uuid
+
+            filename = str(uuid.uuid4()) + "_" + secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+
+            file.save(filepath) 
+       
+            conn.execute(
+                "UPDATE users SET profile_pic = ? WHERE id = ?",
+                (f"/static/uploads/{filename}", user["id"])
             )
 
         conn.commit()
@@ -640,7 +670,6 @@ def settings_page():
         return redirect(url_for("profile_page"))
 
     return render_template("settings.html", user=user)
-
 # ---------------- GAME API (NO KEY) ----------------
 @app.get("/api/trending")
 def api_trending():

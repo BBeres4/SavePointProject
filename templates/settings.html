@@ -18,7 +18,7 @@
     <div class="settings-section">
       <h3>Account</h3>
 
-      <form method="POST">
+      <form method="POST" enctype="multipart/form-data">
         <label>Username</label>
         <input name="username" value="{{ user.username }}" />
 
@@ -27,9 +27,17 @@
 
           <label>Theme</label>
         <select name="theme_preference">
-          <option value="light" {% if user.theme_preference == 'light' %}selected{% endif %}>Light mode</option>
-          <option value="dark" {% if user.theme_preference == 'dark' %}selected{% endif %}>Dark mode</option>
-        </select>
+  <option value="light" {% if user.theme_preference == 'light' %}selected{% endif %}>Light mode</option>
+  <option value="dark" {% if user.theme_preference == 'dark' %}selected{% endif %}>Dark mode</option>
+</select>
+
+<label>Profile Picture</label>
+<input type="file" name="profile_pic" accept="image/*" />
+
+<label>
+  <input type="checkbox" name="remove_pic">
+  Remove current picture
+</label>
 
         <button class="primary-btn" type="submit">Save Changes</button>
       </form>
