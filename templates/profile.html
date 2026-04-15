@@ -15,7 +15,10 @@
 <div class="page">
 </div>
     <!-- PROFILE HEADER CARD -->
-    <div class="profile-top">
+    <div class="profile-top"> 
+      <a href="{{ url_for('settings') }}" class="settings-btn">
+    ⚙ Settings
+  </a>
       <div class="avatar">
   {% if user.profile_pic %}
     <img src="{{ user.profile_pic }}" alt="avatar">
