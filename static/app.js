@@ -212,8 +212,26 @@ async function loadGamesPage(){
   const ratingFilter=document.querySelector("#ratingFilter");
   const sortFilter=document.querySelector("#sortFilter");
 
+  // Reset filters on page load so a cached browser selection does not hide all games.
+  if(yearFilter) yearFilter.value="";
+  if(genreFilter) genreFilter.value="";
+  if(ratingFilter) ratingFilter.value="";
+  if(sortFilter) sortFilter.value="";
+
+  const defaultYearOptions=[...(yearFilter?.options||[])].map(opt=>({
+    value:opt.value,
+    label:opt.textContent||opt.value
+  }));
+  const defaultGenreOptions=[...(genreFilter?.options||[])].map(opt=>({
+    value:opt.value,
+    label:opt.textContent||opt.value
+  }));
+
+  let browseResultsRaw=[];
   let searchResultsRaw=[];
-  let activeBaseList=[];
+  let trendingResultsRaw=[];
+  let activeView="browse";
+  let searchRequestId=0;
 
   function getYear(g){
     if(g?.released_year) return String(g.released_year);
@@ -227,32 +245,118 @@ async function loadGamesPage(){
       .filter(Boolean);
   }
 
+  function normalizeGenreName(value){
+    return (value||"")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g," ")
+      .trim();
+  }
+
+  function matchesYearFilter(game, yearValue){
+    if(!yearValue) return true;
+
+    const gameYear=Number(getYear(game)||0);
+    if(!gameYear) return false;
+
+    const rangeMatch=yearValue.match(/^(\d{4})-(\d{4})$/);
+    if(rangeMatch){
+      const minYear=Number(rangeMatch[1]);
+      const maxYear=Number(rangeMatch[2]);
+      return gameYear>=minYear&&gameYear<=maxYear;
+    }
+
+    return String(gameYear)===yearValue;
+  }
+
+  function matchesGenreFilter(game, genreValue){
+    if(!genreValue) return true;
+
+    const selected=normalizeGenreName(genreValue);
+    const genreAliases={
+      action:["action","action adventure","hack and slash","beat em up"],
+      adventure:["adventure","action adventure","point and click","interactive fiction"],
+      rpg:["rpg","role playing","jrpg","action rpg","crpg","open world rpg"],
+      shooter:["shooter","fps","tps","first person shooter","third person shooter"],
+      "open world":["open world","sandbox","open world rpg"],
+      sports:["sports","football","soccer","basketball","baseball","hockey","golf","tennis","wrestling"],
+      racing:["racing","driving","kart racer","automobile sim"],
+      fighting:["fighting","beat em up","martial arts"],
+      horror:["horror","survival horror","psychological horror"],
+      platformer:["platformer","platform"],
+      puzzle:["puzzle","logic","match 3"]
+    };
+    const acceptedTerms=genreAliases[selected]||[selected];
+    const gameGenres=getGenres(game).map(normalizeGenreName);
+
+    return gameGenres.some(genreName=>
+      acceptedTerms.some(term=>
+        genreName===term||genreName.includes(term)||term.includes(genreName)
+      )
+    );
+  }
+
   function populateYearOptions(list){
     if(!yearFilter) return;
-    const years=[...new Set(list.map(getYear).filter(Boolean))].sort((a,b)=>Number(b)-Number(a));
-    yearFilter.innerHTML=`<option value="">Year</option>`+years.map(y=>`<option value="${y}">${y}</option>`).join("");
+    const selectedValue=yearFilter.value;
+    const dynamicYears=[...new Set(list.map(getYear).filter(Boolean))].sort((a,b)=>Number(b)-Number(a));
+    const mergedOptions=[...defaultYearOptions];
+
+    dynamicYears.forEach(year=>{
+      if(!mergedOptions.some(opt=>opt.value===year)){
+        mergedOptions.push({value:year,label:year});
+      }
+    });
+
+    const placeholderOption=mergedOptions.find(opt=>!opt.value);
+    const exactYearOptions=mergedOptions
+      .filter(opt=>/^\d{4}$/.test(opt.value))
+      .sort((a,b)=>Number(b.value)-Number(a.value));
+    const rangeOptions=mergedOptions.filter(opt=>opt.value&&!/^\d{4}$/.test(opt.value));
+    const sortedOptions=[
+      ...(placeholderOption?[placeholderOption]:[]),
+      ...exactYearOptions,
+      ...rangeOptions
+    ];
+
+    yearFilter.innerHTML=sortedOptions.map(opt=>`<option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>`).join("");
+    yearFilter.value=sortedOptions.some(opt=>opt.value===selectedValue)?selectedValue:"";
   }
 
   function populateGenreOptions(list){
     if(!genreFilter) return;
-    const genres=[...new Set(list.flatMap(getGenres))].sort((a,b)=>a.localeCompare(b));
-    genreFilter.innerHTML=`<option value="">Genre</option>`+genres.map(g=>`<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join("");
+    const selectedValue=genreFilter.value;
+    const dynamicGenres=[...new Set(list.flatMap(getGenres))].sort((a,b)=>a.localeCompare(b));
+    const mergedOptions=[...defaultGenreOptions];
+
+    dynamicGenres.forEach(genre=>{
+      if(!mergedOptions.some(opt=>opt.value===genre)){
+        mergedOptions.push({value:genre,label:genre});
+      }
+    });
+
+    genreFilter.innerHTML=mergedOptions.map(opt=>`<option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>`).join("");
+    genreFilter.value=mergedOptions.some(opt=>opt.value===selectedValue)?selectedValue:"";
   }
 
-  function applyFilters(list){
+  function applyFilters(list, query=""){
     let filtered=[...list];
 
+    const normalizedQuery=(query||"").trim().toLowerCase();
     const year=yearFilter?.value||"";
     const genre=genreFilter?.value||"";
     const rating=parseFloat(ratingFilter?.value||0);
     const sort=sortFilter?.value||"";
 
+    if(normalizedQuery){
+      filtered=filtered.filter(g=>(g.name||"").toLowerCase().includes(normalizedQuery));
+    }
+
     if(year){
-      filtered=filtered.filter(g=>getYear(g)===year);
+      filtered=filtered.filter(g=>matchesYearFilter(g,year));
     }
 
     if(genre){
-      filtered=filtered.filter(g=>getGenres(g).includes(genre));
+      filtered=filtered.filter(g=>matchesGenreFilter(g,genre));
     }
 
     if(rating){
@@ -286,80 +390,142 @@ async function loadGamesPage(){
     return filtered;
   }
 
-  function renderSearch(){
-    if(!input||!searchGrid||!searchSection||!popularSection) return;
+  function hasActiveFilters(){
+    return Boolean(
+      yearFilter?.value||
+      genreFilter?.value||
+      ratingFilter?.value||
+      sortFilter?.value
+    );
+  }
 
-    const q=input.value.trim();
+  function getActiveSource(){
+    const q=input?.value.trim()||"";
+    if(q){
+      return {
+        list:searchResultsRaw,
+        query:q,
+        view:"search"
+      };
+    }
 
-    if(!q){
-      searchSection.classList.add("is-hidden");
-      popularSection.classList.remove("is-hidden");
-      searchGrid.innerHTML="";
-      if(resultsCount) resultsCount.textContent="";
+    return {
+      list:browseResultsRaw,
+      query:"",
+      view:"browse"
+    };
+  }
+
+  function syncFilterOptions(){
+    const source=getActiveSource();
+    populateYearOptions(source.list);
+    populateGenreOptions(source.list);
+  }
+
+  function renderGamesView(){
+    if(!popularGrid||!searchGrid||!popularSection||!searchSection) return;
+
+    const source=getActiveSource();
+    const filtered=applyFilters(source.list,source.query);
+    const showingSearch=source.view==="search";
+
+    activeView=source.view;
+    popularSection.classList.toggle("is-hidden",showingSearch);
+    searchSection.classList.toggle("is-hidden",!showingSearch);
+
+    if(showingSearch){
+      popularGrid.innerHTML="";
+
+      if(!filtered.length){
+        searchGrid.innerHTML=`<div class="muted">No games found.</div>`;
+        if(resultsCount) resultsCount.textContent="0 results";
+        return;
+      }
+
+      searchGrid.innerHTML=filtered.map(cardHTML).join("");
+      if(resultsCount){
+        resultsCount.textContent=`${filtered.length} result${filtered.length===1?"":"s"}`;
+      }
+
+      window.scrollTo({
+        top:searchSection.offsetTop-80,
+        behavior:"smooth"
+      });
       return;
     }
 
-    searchSection.classList.remove("is-hidden");
-    popularSection.classList.add("is-hidden");
-
-    const filtered=applyFilters(activeBaseList);
+    searchGrid.innerHTML="";
+    if(resultsCount) resultsCount.textContent="";
 
     if(!filtered.length){
-      searchGrid.innerHTML=`<div class="muted">No games found.</div>`;
-      if(resultsCount) resultsCount.textContent="0 results";
+      popularGrid.innerHTML=`<div class="muted">No games found.</div>`;
       return;
     }
 
-    searchGrid.innerHTML=filtered.map(cardHTML).join("");
-    if(resultsCount){
-      resultsCount.textContent=`${filtered.length} result${filtered.length===1?"":"s"}`;
-    }
-
-    window.scrollTo({
-      top:searchSection.offsetTop-80,
-      behavior:"smooth"
-    });
+    popularGrid.innerHTML=filtered.map(cardHTML).join("");
   }
 
   async function runSearch(q){
     if(!searchGrid||!searchSection||!popularSection) return;
 
     if(!q){
-      activeBaseList=[];
-      renderSearch();
+      searchResultsRaw=[];
+      syncFilterOptions();
+      renderGamesView();
       return;
     }
 
-    searchGrid.innerHTML=`<div class="muted">Searching...</div>`;
-    searchSection.classList.remove("is-hidden");
-    popularSection.classList.add("is-hidden");
+    const requestId=++searchRequestId;
+
+    if(resultsCount){
+      resultsCount.textContent="Searching...";
+    }
 
     try{
       const res=await apiGet(`/api/search?q=${encodeURIComponent(q)}`);
+
+      if(requestId!==searchRequestId) return;
+
       let list=res.results||[];
       list=removeDuplicateTitles(list);
 
       searchResultsRaw=list;
-      activeBaseList=[...searchResultsRaw];
-
-      populateYearOptions(searchResultsRaw);
-      populateGenreOptions(searchResultsRaw);
-      renderSearch();
+      syncFilterOptions();
+      renderGamesView();
     }catch(e){
+      if(requestId!==searchRequestId) return;
+
+      activeView="search";
+      searchSection.classList.remove("is-hidden");
+      popularSection.classList.add("is-hidden");
       searchGrid.innerHTML=`<div class="muted">${escapeHtml(e.message)}</div>`;
       if(resultsCount) resultsCount.textContent="";
     }
   }
 
   try{
-    const popular=await apiGet("/api/trending");
-    let list=popular.results||[];
-    list=removeDuplicateTitles(list);
-    list=shuffle(list);
+    const [browse,popular]=await Promise.all([
+      apiGet("/api/browse"),
+      apiGet("/api/trending")
+    ]);
 
-    if(popularGrid){
-      popularGrid.innerHTML=list.slice(0,12).map(cardHTML).join("");
+    let browseList=removeDuplicateTitles(browse.results||[]);
+    let popularList=removeDuplicateTitles(popular.results||[]);
+
+    browseResultsRaw=[...browseList];
+    trendingResultsRaw=[...popularList];
+
+    if(!browseResultsRaw.length&&trendingResultsRaw.length){
+      browseResultsRaw=[...trendingResultsRaw];
     }
+
+    if(!hasActiveFilters()&&trendingResultsRaw.length){
+      browseResultsRaw=[...shuffle(trendingResultsRaw).slice(0,12), ...browseResultsRaw]
+        .filter((game,index,list)=>list.findIndex(other=>other.id===game.id)===index);
+    }
+
+    syncFilterOptions();
+    renderGamesView();
   }catch(e){
     if(popularGrid){
       popularGrid.innerHTML=`<div class="muted">${escapeHtml(e.message)}</div>`;
@@ -376,14 +542,19 @@ async function loadGamesPage(){
 
   input.addEventListener("input",()=>{
     clearTimeout(t);
-    t=setTimeout(()=>runSearch(input.value.trim()),250);
+    const q=input.value.trim();
+
+    syncFilterOptions();
+    renderGamesView();
+
+    t=setTimeout(()=>runSearch(q),250);
   });
 
   [yearFilter,genreFilter,ratingFilter,sortFilter].forEach(el=>{
     if(!el) return;
     el.addEventListener("change",()=>{
-      activeBaseList=[...searchResultsRaw];
-      renderSearch();
+      syncFilterOptions();
+      renderGamesView();
     });
   });
 }
