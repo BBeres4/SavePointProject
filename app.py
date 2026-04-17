@@ -2,7 +2,7 @@ import os
 import re
 import sqlite3
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -17,6 +17,8 @@ app.secret_key = os.environ.get("FLASK_SECRET", "dev-secret-change-me")
 
 CHEAPSHARK_BASE = "https://www.cheapshark.com/api/1.0"
 STEAM_APPDETAILS = "https://store.steampowered.com/api/appdetails"
+STEAM_DETAILS_CACHE = {}
+BROWSE_GAMES_CACHE = {"expires_at": None, "results": []}
 
 
 # ---------------- helpers ----------------
@@ -160,15 +162,53 @@ def enrich_games_with_steam_metadata(games):
 def get_steam_details(steam_appid):
     if not steam_appid:
         return None
+    cached = STEAM_DETAILS_CACHE.get(str(steam_appid))
+    if cached is not None:
+        return cached
     try:
         r = requests.get(STEAM_APPDETAILS, params={"appids": steam_appid}, timeout=12)
         data = r.json()
         block = data.get(str(steam_appid))
         if not block or not block.get("success"):
+            STEAM_DETAILS_CACHE[str(steam_appid)] = None
             return None
-        return block.get("data")
+        steam_data = block.get("data")
+        STEAM_DETAILS_CACHE[str(steam_appid)] = steam_data
+        return steam_data
     except Exception:
         return None
+
+
+def load_browse_games():
+    now = datetime.utcnow()
+    expires_at = BROWSE_GAMES_CACHE.get("expires_at")
+    if expires_at and expires_at > now and BROWSE_GAMES_CACHE.get("results"):
+        return BROWSE_GAMES_CACHE["results"]
+
+    collected = []
+    seen_ids = set()
+
+    # Use the deals endpoint for browsing; the games endpoint requires a search criterion.
+    for page_number in range(3):
+        r = requests.get(
+            f"{CHEAPSHARK_BASE}/deals",
+            params={"pageSize": 20, "pageNumber": page_number, "sortBy": "Deal Rating"},
+            timeout=12
+        )
+        r.raise_for_status()
+
+        page_items = [normalize_game(x) for x in r.json()]
+        for game in page_items:
+            game_id = game.get("id")
+            if not game_id or game_id in seen_ids:
+                continue
+            seen_ids.add(game_id)
+            collected.append(game)
+
+    results = enrich_games_with_steam_metadata(collected)
+    BROWSE_GAMES_CACHE["results"] = results
+    BROWSE_GAMES_CACHE["expires_at"] = now + timedelta(minutes=30)
+    return results
 
 
 # ---------------- init ----------------
@@ -681,6 +721,15 @@ def api_trending():
         return jsonify({"results": results})
     except Exception as e:
         return jsonify({"error": "Failed to load trending", "detail": str(e)}), 500
+
+
+@app.get("/api/browse")
+def api_browse():
+    try:
+        results = load_browse_games()
+        return jsonify({"results": results})
+    except Exception as e:
+        return jsonify({"error": "Failed to load games", "detail": str(e)}), 500
 
 
 @app.get("/api/search")
