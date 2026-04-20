@@ -6,6 +6,54 @@ function imgFromGame(g){
     .replace("crop/600/400","crop/600/800");
 }
 
+function gameCoverHTML(game, className=""){
+  const name=game?.name || game?.game_name || `Game #${game?.id || game?.game_id || ""}`;
+  const gameId=String(game?.id || game?.game_id || "");
+  const rawImg=imgFromGame({
+    ...game,
+    background_image:game?.background_image || game?.game_cover || ""
+  });
+  const img=gameId ? `/api/cover/${encodeURIComponent(gameId)}?src=${encodeURIComponent(rawImg)}` : rawImg;
+  const cls=className ? ` class="${className}"` : "";
+
+  if(img){
+    return `<img${cls} src="${escapeHtml(img)}" alt="${escapeHtml(name)} cover" data-game-id="${escapeHtml(gameId)}" data-game-name="${escapeHtml(name)}" onerror="repairGameCover(this)">`;
+  }
+
+  return className
+    ? `<div${cls}></div>`
+    : `<div class="muted">No cover</div>`;
+}
+
+async function repairGameCover(img){
+  if(!img || img.dataset.coverRetry === "done") return;
+
+  img.dataset.coverRetry="done";
+  const gameId=img.dataset.gameId;
+  if(!gameId) return;
+
+  try{
+    const game=await apiGet(`/api/game/${encodeURIComponent(gameId)}`);
+    const recoveredRaw=imgFromGame(game);
+    const recovered=recoveredRaw
+      ? `/api/cover/${encodeURIComponent(gameId)}?src=${encodeURIComponent(recoveredRaw)}`
+      : "";
+    if(recovered && recovered !== img.currentSrc && recovered !== img.src){
+      img.src=recovered;
+      img.alt=`${game?.name || img.dataset.gameName || "Game"} cover`;
+      return;
+    }
+  }catch(_){}
+
+  const fallback=img.closest(".cover-wrap,.review-card");
+  if(fallback && fallback.classList.contains("cover-wrap")){
+    fallback.innerHTML=`<div class="muted">No cover</div>`;
+    return;
+  }
+
+  img.outerHTML=`<div class="review-cover"></div>`;
+}
+
 function stars(n){
   const full="★".repeat(n);
   const empty="☆".repeat(5-n);
@@ -13,14 +61,13 @@ function stars(n){
 }
 
 function cardHTML(game){
-  const img=imgFromGame(game);
   const year=game?.released_year||((game?.released&&(""+game.released).match(/(19|20)\d{2}/)?.[0]))||"—";
   const rating=(typeof game.rating==="number"&&game.rating>0)?game.rating.toFixed(1):"—";
 
   return `
     <div class="card" onclick="location.href='/game/${game.id}'">
       <div class="cover-wrap">
-        <img src="${img}" alt="${escapeHtml(game.name)} cover">
+        ${gameCoverHTML(game)}
       </div>
       <div class="p">
         <div class="title">${escapeHtml(game.name)}</div>
@@ -82,7 +129,7 @@ function reviewRowHTML(game){
           <div class="review-body">${escapeHtml(r.body)}</div>
         </div>
       </div>
-      <img class="review-cover" src="${imgFromGame(game)}" alt="${escapeHtml(game.name)} cover">
+      ${gameCoverHTML(game, "review-cover")}
     </div>
   `;
 }
@@ -831,7 +878,11 @@ async function loadProfilePage(){
                   <div class="review-body">${escapeHtml(r.body || "")}</div>
                 </div>
               </div>
-              <img class="review-cover" src="${escapeHtml(r.game_cover || "")}" alt="${escapeHtml(r.game_name || "Game")} cover">
+              ${gameCoverHTML({
+                id:r.game_id,
+                name:r.game_name,
+                background_image:r.game_cover
+              }, "review-cover")}
             </div>
           `).join("")
         : `<div class="muted">Open a game and post a review to populate this.</div>`;
