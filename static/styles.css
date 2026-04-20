@@ -1469,43 +1469,13 @@ body{
 }
 
 body[data-theme="dark"]{
-  --blue:#6ea8ff;
-  --blue-dark:#3b82f6;
-  --bg:#06101d;
-  --bg-2:#0d1a2b;
-  --card:#16263c;
-  --text:#f3f7ff;
-  --muted:#b1c0d8;
-  --line:#33506f;
-  --shadow:0 16px 38px rgba(0,0,0,.34);
-  --shadow-hover:0 20px 48px rgba(0,0,0,.44);
-  background:
-    radial-gradient(circle at top left,rgba(59,130,246,.22) 0%,rgba(59,130,246,0) 30%),
-    radial-gradient(circle at top right,rgba(16,185,129,.12) 0%,rgba(16,185,129,0) 20%),
-    linear-gradient(180deg,#08111d 0%,#091523 42%,#050b14 100%);
-  color:var(--text);
-}
-
-body[data-theme="dark"] .section-kicker{
-  color:#8eb8ff;
-}
-
-body[data-theme="dark"] .topbar{
-  background:rgba(7,17,31,.82);
-  border-bottom:1px solid rgba(110,168,255,.14);
-  box-shadow:0 10px 30px rgba(0,0,0,.34);
-}
-
-body[data-theme="dark"] .tabs a{
-  color:#dbe7ff;
-}
-
-body[data-theme="dark"] .tabs a:hover{
-  background:rgba(255,255,255,.08);
-}
-
-body[data-theme="dark"] .tabs a.active{
-  background:linear-gradient(135deg,rgba(110,168,255,.18),rgba(59,130,246,.26));
+  --bg:#0b1220;
+  --bg-2:#111b2f;
+  --card:#111827;
+  --text:#e5e7eb;
+  --muted:#94a3b8;
+  --line:#334155;
+  background: radial-gradient(circle at top left,#111827 0%,#0f172a 45%,#020617 100%);
 }
 
 body[data-theme="dark"] .settings-section,
@@ -1517,174 +1487,26 @@ body[data-theme="dark"] .profile-top,
 body[data-theme="dark"] .col,
 body[data-theme="dark"] .review-right,
 body[data-theme="dark"] .review-side{
-  background:linear-gradient(180deg,rgba(24,39,61,.96),rgba(15,27,44,.99));
-  border:1px solid rgba(116,154,201,.22);
-  box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.04);
-}
-
-body[data-theme="dark"] .games-search-panel,
-body[data-theme="dark"] .review-card,
-body[data-theme="dark"] .review-comment,
-body[data-theme="dark"] .friend-result-row{
-  background:linear-gradient(180deg,rgba(24,40,63,.96),rgba(16,29,47,.99));
-  border:1px solid rgba(116,154,201,.24);
-  box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.035);
-}
-
-body[data-theme="dark"] .hero-banner{
-  box-shadow:0 22px 52px rgba(0,0,0,.34);
-}
-
-body[data-theme="dark"] .hero-banner::after{
-  background:linear-gradient(90deg,rgba(6,12,24,.34),rgba(6,12,24,.08));
+  background:#0f172a;
+  border-color:#1e293b;
 }
 
 body[data-theme="dark"] .search,
 body[data-theme="dark"] input,
 body[data-theme="dark"] select,
 body[data-theme="dark"] textarea{
-  background:#0d1828;
-  color:#eff5ff;
-  border-color:#395778;
+  background:#0b1220;
+  color:#e2e8f0;
+  border-color:#334155;
 }
 
-body[data-theme="dark"] .search:focus,
-body[data-theme="dark"] input:focus,
-body[data-theme="dark"] select:focus,
-body[data-theme="dark"] textarea:focus{
-  border-color:#5b98ff;
-  box-shadow:0 0 0 4px rgba(91,152,255,.14);
+body[data-theme="dark"] .friend-result-row{
+  background:#0b1220;
+  border-color:#1e293b;
 }
 
-body[data-theme="dark"] .card{
-  border-color:rgba(124,169,221,.22);
-  background:linear-gradient(180deg,rgba(24,40,63,.97),rgba(16,29,47,.99));
-  box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.035);
-}
-
-body[data-theme="dark"] .card .title,
-body[data-theme="dark"] .review-title,
-body[data-theme="dark"] .page-title,
-body[data-theme="dark"] .section h2,
-body[data-theme="dark"] .activity-head{
-  color:#f4f8ff;
-}
-
-body[data-theme="dark"] .activity-body,
-body[data-theme="dark"] .review-body{
-  color:#d5e0f0;
-}
-
-body[data-theme="dark"] .review-meta,
-body[data-theme="dark"] .card .meta,
-body[data-theme="dark"] .muted{
-  color:#b4c1d4;
-}
-
-body[data-theme="dark"] .review-comment{
-  color:#e1e9f8;
-}
-
-body[data-theme="dark"] .friend-pill{
-  background:linear-gradient(135deg,rgba(110,168,255,.18),rgba(59,130,246,.12));
-  color:#edf5ff;
-  border:1px solid rgba(143,184,235,.24);
-}
-
-body[data-theme="dark"] .ghost-btn{
-  background:rgba(110,168,255,.12);
-  border-color:rgba(143,184,235,.28);
-  color:#edf5ff;
-}
-
-body[data-theme="dark"] .link{
-  color:#9bc2ff;
-}
-
-body[data-theme="dark"] .section-kicker,
-body[data-theme="dark"] .stars{
-  filter:brightness(1.08);
-}
-
-body[data-theme="dark"] .pfp{
-  box-shadow:0 10px 24px rgba(59,130,246,.22);
-}
-
-body[data-theme="dark"] .game-row::-webkit-scrollbar-track{
-  background:#0f1a29;
-}
-
-body[data-theme="dark"] .game-row::-webkit-scrollbar-thumb{
-  background:linear-gradient(90deg,#4f7fd1,#7cb0ff);
-}
-
-body[data-theme="dark"] .three-cols .col{
-  background:linear-gradient(180deg,rgba(25,41,64,.96),rgba(16,29,47,.99));
-  border-color:rgba(124,169,221,.22);
-}
-
-body[data-theme="dark"] .profile-top{
-  background:
-    radial-gradient(circle at top left,rgba(125,177,255,.22) 0%,rgba(125,177,255,0) 32%),
-    linear-gradient(135deg,rgba(36,70,128,.96),rgba(24,49,94,.98));
-  border:1px solid rgba(146,191,255,.28);
-  box-shadow:
-    0 22px 52px rgba(3,8,20,.34),
-    inset 0 1px 0 rgba(255,255,255,.08);
-}
-
-body[data-theme="dark"] .profile-top .muted{
-  color:rgba(222,234,255,.74);
-}
-
-body[data-theme="dark"] .follow,
-body[data-theme="dark"] .metrics{
-  gap:18px;
-}
-
-body[data-theme="dark"] .follow > div,
-body[data-theme="dark"] .metrics > div{
-  min-width:112px;
-  padding:12px 14px;
-  border-radius:16px;
-  background:rgba(8,21,46,.18);
-  border:1px solid rgba(182,210,255,.16);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
-}
-
-body[data-theme="dark"] .follow b,
-body[data-theme="dark"] .metrics b{
-  color:#ffffff;
-  font-size:22px;
-}
-
-body[data-theme="dark"] .avatar{
-  background:linear-gradient(135deg,#7cb0ff,#3b82f6);
-  box-shadow:
-    0 14px 28px rgba(12,24,48,.28),
-    0 0 0 4px rgba(255,255,255,.06);
-}
-
-body[data-theme="dark"] .avatar img{
-  border:3px solid rgba(255,255,255,.12);
-}
-
-body[data-theme="dark"] .three-cols .col:not(:first-child)::before,
-body[data-theme="dark"] .col h3{
-  border-color:rgba(110,168,255,.16);
-  background-image:none;
-}
-
-body[data-theme="dark"] .three-cols .col:not(:first-child)::before{
-  background:linear-gradient(to bottom,rgba(124,169,221,0),rgba(124,169,221,.34),rgba(124,169,221,0));
-}
-
-body[data-theme="dark"] .settings-btn{
-  color:#eef5ff;
-  background:rgba(8,21,46,.22);
-  border:1px solid rgba(182,210,255,.18);
-  border-radius:10px;
-  padding:8px 12px;
+body[data-theme="dark"] .topbar{
+  background:rgba(15,23,42,.94);
 }
 
 .avatar {
