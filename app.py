@@ -4,7 +4,7 @@ import sqlite3
 import requests
 from datetime import datetime, timedelta
 
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from db import init_db, connect
@@ -19,6 +19,10 @@ CHEAPSHARK_BASE = "https://www.cheapshark.com/api/1.0"
 STEAM_APPDETAILS = "https://store.steampowered.com/api/appdetails"
 STEAM_DETAILS_CACHE = {}
 BROWSE_GAMES_CACHE = {"expires_at": None, "results": []}
+GAME_DETAILS_CACHE = {}
+GAME_SUMMARY_CACHE = {}
+HTTP = requests.Session()
+HTTP.trust_env = False
 
 
 # ---------------- helpers ----------------
@@ -166,7 +170,7 @@ def get_steam_details(steam_appid):
     if cached is not None:
         return cached
     try:
-        r = requests.get(STEAM_APPDETAILS, params={"appids": steam_appid}, timeout=12)
+        r = HTTP.get(STEAM_APPDETAILS, params={"appids": steam_appid}, timeout=12)
         data = r.json()
         block = data.get(str(steam_appid))
         if not block or not block.get("success"):
@@ -177,6 +181,118 @@ def get_steam_details(steam_appid):
         return steam_data
     except Exception:
         return None
+
+
+def is_valid_cover_url(value):
+    text = (value or "").strip()
+    return text.startswith("http://") or text.startswith("https://") or text.startswith("/static/")
+
+
+def resolve_game_cover(game_id, current_cover=""):
+    if is_valid_cover_url(current_cover):
+        return current_cover
+
+    game_id = str(game_id or "").strip()
+    if not game_id:
+        return ""
+
+    cached = GAME_DETAILS_CACHE.get(game_id)
+    if cached is not None:
+        return cached
+
+    cover = ""
+    try:
+        r = HTTP.get(f"{CHEAPSHARK_BASE}/games", params={"id": game_id}, timeout=12)
+        r.raise_for_status()
+        data = r.json()
+        info = data.get("info", {})
+        cover = info.get("thumb") or ""
+
+        steam = get_steam_details(info.get("steamAppID"))
+        if steam and steam.get("header_image"):
+            cover = steam["header_image"]
+    except Exception:
+        cover = ""
+
+    GAME_DETAILS_CACHE[game_id] = cover
+    return cover
+
+
+def resolve_game_summary(game_id, current_name="", current_cover=""):
+    game_id = str(game_id or "").strip()
+    if not game_id:
+        return {
+            "id": "",
+            "name": current_name or "Unknown",
+            "background_image": current_cover or "",
+        }
+
+    cached = GAME_SUMMARY_CACHE.get(game_id)
+    if cached is not None:
+        return {
+            "id": game_id,
+            "name": cached.get("name") or current_name or f"Game #{game_id}",
+            "background_image": cached.get("background_image") or current_cover or "",
+        }
+
+    name = (current_name or "").strip()
+    cover = ""
+    try:
+        r = HTTP.get(f"{CHEAPSHARK_BASE}/games", params={"id": game_id}, timeout=12)
+        r.raise_for_status()
+        data = r.json()
+        info = data.get("info", {})
+        name = info.get("title") or name
+        cover = info.get("thumb") or ""
+
+        steam = get_steam_details(info.get("steamAppID"))
+        if steam and steam.get("header_image"):
+            cover = steam["header_image"]
+    except Exception:
+        cover = ""
+
+    if not cover:
+        cover = current_cover or resolve_game_cover(game_id, current_cover)
+
+    summary = {
+        "id": game_id,
+        "name": name or f"Game #{game_id}",
+        "background_image": cover or "",
+    }
+    GAME_SUMMARY_CACHE[game_id] = summary
+    return summary
+
+
+def proxy_cover_response(game_id, current_cover=""):
+    cover_url = resolve_game_cover(game_id, current_cover)
+    if not cover_url:
+        return None
+
+    try:
+        r = HTTP.get(cover_url, timeout=20)
+        r.raise_for_status()
+    except Exception:
+        return None
+
+    content_type = r.headers.get("Content-Type", "image/jpeg")
+    return Response(
+        r.content,
+        mimetype=content_type,
+        headers={"Cache-Control": "public, max-age=86400"}
+    )
+
+
+def build_cover_path(game_id, current_cover="", prefer_fresh=False):
+    game_id = str(game_id or "").strip()
+    if not game_id:
+        return ""
+    cover_source = "" if prefer_fresh else current_cover
+    cover_url = resolve_game_cover(game_id, cover_source)
+    if not cover_url and current_cover:
+        cover_url = current_cover
+    if not cover_url:
+        return ""
+    return f"/api/cover/{game_id}?src={requests.utils.quote(cover_url, safe='')}"
 
 
 def load_browse_games():
@@ -190,7 +306,7 @@ def load_browse_games():
 
     # Use the deals endpoint for browsing; the games endpoint requires a search criterion.
     for page_number in range(3):
-        r = requests.get(
+        r = HTTP.get(
             f"{CHEAPSHARK_BASE}/deals",
             params={"pageSize": 20, "pageNumber": page_number, "sortBy": "Deal Rating"},
             timeout=12
@@ -616,13 +732,24 @@ def api_profile_content():
         ORDER BY r.created_at DESC
         LIMIT 8
     """, (me["id"],)).fetchall()
+
+    fallback_rows = conn.execute("""
+        SELECT li.game_id, li.game_name, li.game_cover, MAX(li.added_at) AS last_seen
+        FROM list_items li
+        JOIN lists l ON l.id = li.list_id
+        WHERE l.user_id = ?
+        GROUP BY li.game_id, li.game_name, li.game_cover
+        ORDER BY last_seen DESC
+        LIMIT 8
+    """, (me["id"],)).fetchall()
     conn.close()
 
     def as_game(row):
+        summary = resolve_game_summary(row["game_id"], row["game_name"], row["game_cover"])
         return {
-            "id": str(row["game_id"]),
-            "name": row["game_name"] or f"Game #{row['game_id']}",
-            "background_image": row["game_cover"] or "",
+            "id": summary["id"],
+            "name": summary["name"],
+            "background_image": build_cover_path(summary["id"], summary["background_image"]),
             "released": None,
             "rating": 0.0,
             "added": 0,
@@ -633,15 +760,34 @@ def api_profile_content():
 
     if not favorites:
         favorites = [as_game(r) for r in reviewed_rows[:4]]
+    if not favorites:
+        favorites = [as_game(r) for r in fallback_rows[:4]]
     if not recently_played:
         recently_played = [as_game(r) for r in reviewed_rows[4:8] or reviewed_rows[:4]]
+    if not recently_played:
+        recently_played = [as_game(r) for r in fallback_rows[:4]]
 
-    reviewed = [dict(r) for r in reviewed_rows]
+    reviewed = []
+    for row in reviewed_rows:
+        item = dict(row)
+        summary = resolve_game_summary(row["game_id"], row["game_name"], row["game_cover"])
+        item["game_name"] = summary["name"]
+        item["game_cover"] = build_cover_path(summary["id"], summary["background_image"])
+        reviewed.append(item)
     return jsonify({
         "favorites": favorites,
         "recently_played": recently_played,
         "recently_reviewed": reviewed,
     })
+
+
+@app.get("/api/cover/<game_id>")
+def api_cover(game_id):
+    current_cover = request.args.get("src", "")
+    response = proxy_cover_response(game_id, current_cover)
+    if response is not None:
+        return response
+    return ("", 404)
 
 @app.route("/settings", methods=["GET", "POST"])
 def settings_page():
@@ -714,7 +860,7 @@ def settings_page():
 @app.get("/api/trending")
 def api_trending():
     try:
-        r = requests.get(f"{CHEAPSHARK_BASE}/deals", params={"pageSize": 20, "sortBy": "Deal Rating"}, timeout=12)
+        r = HTTP.get(f"{CHEAPSHARK_BASE}/deals", params={"pageSize": 20, "sortBy": "Deal Rating"}, timeout=12)
         r.raise_for_status()
         results = [normalize_game(x) for x in r.json()]
         results = enrich_games_with_steam_metadata(results)
@@ -739,7 +885,7 @@ def api_search():
         return jsonify({"results": []})
 
     try:
-        r = requests.get(f"{CHEAPSHARK_BASE}/games", params={"title": q, "limit": 20}, timeout=12)
+        r = HTTP.get(f"{CHEAPSHARK_BASE}/games", params={"title": q, "limit": 20}, timeout=12)
         r.raise_for_status()
         results = [normalize_game(x) for x in r.json()]
         results = enrich_games_with_steam_metadata(results)
@@ -751,7 +897,7 @@ def api_search():
 @app.get("/api/game/<game_id>")
 def api_game(game_id):
     try:
-        r = requests.get(f"{CHEAPSHARK_BASE}/games", params={"id": game_id}, timeout=12)
+        r = HTTP.get(f"{CHEAPSHARK_BASE}/games", params={"id": game_id}, timeout=12)
         r.raise_for_status()
         data = r.json()
 
