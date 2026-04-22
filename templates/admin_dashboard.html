@@ -7,78 +7,95 @@
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body data-theme="light">
-  <main class="container" style="padding-top:24px;padding-bottom:36px;">
-    <section class="card" style="margin-bottom:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-        <div>
-          <h1 style="margin:0;">Admin Dashboard</h1>
-          <p class="muted" style="margin:6px 0 0;">Signed in as <b>{{ admin.username }}</b></p>
-        </div>
-        <a class="link" href="/admin/logout">Logout</a>
+   <main class="page admin-page">
+    <section class="admin-hero">
+      <div>
+        <p class="admin-eyebrow">Control Center</p>
+        <h1>Admin Dashboard</h1>
+        <p class="admin-subtitle">Signed in as <b>{{ admin.username }}</b>. Review account activity, manage games, and monitor platform growth.</p>
       </div>
+      <a class="ghost-btn admin-logout" href="/admin/logout">Logout</a>
     </section>
 
-    <section class="grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap:12px; margin-bottom:16px;">
-      <article class="card"><h3 style="margin:0 0 4px;">Accounts</h3><div style="font-size:1.5rem;font-weight:700;">{{ metrics.user_count }}</div></article>
-      <article class="card"><h3 style="margin:0 0 4px;">Reviews</h3><div style="font-size:1.5rem;font-weight:700;">{{ metrics.reviews_count }}</div></article>
-      <article class="card"><h3 style="margin:0 0 4px;">Lists</h3><div style="font-size:1.5rem;font-weight:700;">{{ metrics.lists_count }}</div></article>
-      <article class="card"><h3 style="margin:0 0 4px;">Managed Games</h3><div style="font-size:1.5rem;font-weight:700;">{{ metrics.managed_games_count }}</div></article>
+<section class="admin-metrics">
+      <article class="admin-stat-card">
+        <p class="admin-stat-label">Accounts</p>
+        <p class="admin-stat-value">{{ metrics.user_count }}</p>
+      </article>
+      <article class="admin-stat-card">
+        <p class="admin-stat-label">Reviews</p>
+        <p class="admin-stat-value">{{ metrics.reviews_count }}</p>
+      </article>
+      <article class="admin-stat-card">
+        <p class="admin-stat-label">Lists</p>
+        <p class="admin-stat-value">{{ metrics.lists_count }}</p>
+      </article>
+      <article class="admin-stat-card">
+        <p class="admin-stat-label">Managed Games</p>
+        <p class="admin-stat-value">{{ metrics.managed_games_count }}</p>
+      </article>
     </section>
 
-    <section class="card" style="margin-bottom:16px;">
-      <h2 style="margin-top:0;">Account Search & Activity</h2>
-      <form method="GET" action="/admin" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-        <input name="q" value="{{ q }}" placeholder="Search username..." style="flex:1;min-width:220px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);"/>
-        <button class="primary-btn" type="submit">Search</button>
-      </form>
+    <section class="admin-layout">
+      <article class="admin-panel">
+        <h2>Account Search & Activity</h2>
+        <form method="GET" action="/admin" class="admin-search-form">
+          <input class="admin-input" name="q" value="{{ q }}" placeholder="Search username..." />
+          <button class="primary-btn" type="submit">Search</button>
+        </form>
 
-      {% if users %}
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-          {% for u in users %}
-            <a class="chip" href="/admin?q={{ q }}&user_id={{ u.id }}">{{ u.username }}</a>
-          {% endfor %}
-        </div>
-      {% elif q %}
-        <p class="muted">No matching accounts found.</p>
-      {% endif %}
-
-      {% if selected_user %}
-        <h3 style="margin-bottom:6px;">Activity for {{ selected_user.username }}</h3>
-        <p class="muted" style="margin-top:0;">Joined {{ selected_user.created_at }}</p>
-        {% if activity %}
-          <ul style="padding-left:18px; margin:0;">
-            {% for a in activity %}
-              <li style="margin-bottom:8px;">
-                <b>{{ a.type }}</b> — {{ a.detail }}
-                <span class="muted">({{ a.at }})</span>
-              </li>
+       {% if users %}
+          <div class="admin-user-chips">
+            {% for u in users %}
+              <a class="chip" href="/admin?q={{ q }}&user_id={{ u.id }}">{{ u.username }}</a>
             {% endfor %}
-          </ul>
-        {% else %}
-          <p class="muted">No activity yet for this account.</p>
+          </div>
+        {% elif q %}
+          <p class="muted">No matching accounts found.</p>
         {% endif %}
-      {% endif %}
+
+{% if selected_user %}
+          <div class="admin-user-activity">
+            <h3>Activity for {{ selected_user.username }}</h3>
+            <p class="muted">Joined {{ selected_user.created_at }}</p>
+            {% if activity %}
+              <ul class="admin-activity-list">
+                {% for a in activity %}
+                  <li>
+                    <b>{{ a.type }}</b> — {{ a.detail }}
+                    <span class="muted">({{ a.at }})</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="muted">No activity yet for this account.</p>
+            {% endif %}
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="admin-panel">
+        <h2>Add Game to System</h2>
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
+        {% if notice %}<div class="success">{{ notice }}</div>{% endif %}
+        <form method="POST" action="/admin" class="admin-add-game-form">
+          <input class="admin-input" name="title" placeholder="Game title" required />
+          <input class="admin-input" name="genre" placeholder="Genre" />
+          <input class="admin-input" name="platform" placeholder="Platform" />
+          <input class="admin-input" name="release_year" placeholder="Release year (optional)" />
+          <div class="admin-form-actions">
+            <button class="primary-btn" type="submit">Add Game</button>
+          </div>
+        </form>
+      </article>
     </section>
 
-    <section class="card" style="margin-bottom:16px;">
-      <h2 style="margin-top:0;">Add Game to System</h2>
-      {% if error %}<div class="error" style="margin-bottom:10px;">{{ error }}</div>{% endif %}
-      {% if notice %}<div class="success" style="margin-bottom:10px;">{{ notice }}</div>{% endif %}
-      <form method="POST" action="/admin" style="display:grid;grid-template-columns: repeat(2, minmax(0, 1fr));gap:10px;">
-        <input name="title" placeholder="Game title" required style="padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);" />
-        <input name="genre" placeholder="Genre" style="padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);" />
-        <input name="platform" placeholder="Platform" style="padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);" />
-        <input name="release_year" placeholder="Release year (optional)" style="padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);" />
-        <div style="grid-column: 1 / -1;"><button class="primary-btn" type="submit">Add Game</button></div>
-      </form>
-    </section>
-
-    <section class="card">
-      <h2 style="margin-top:0;">Recently Added Managed Games</h2>
+    <section class="admin-panel">
+      <h2>Recently Added Managed Games</h2>
       {% if managed_games %}
-        <ul style="padding-left:18px;margin:0;">
+          <ul class="admin-managed-list">
           {% for g in managed_games %}
-            <li style="margin-bottom:8px;">
+            <li>
               <b>{{ g.title }}</b>
               {% if g.genre %}<span class="muted"> • {{ g.genre }}</span>{% endif %}
               {% if g.platform %}<span class="muted"> • {{ g.platform }}</span>{% endif %}
