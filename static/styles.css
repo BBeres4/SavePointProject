@@ -1372,6 +1372,179 @@ body{
 
 .is-hidden{display:none}
 
+/* ---------- ADMIN DASHBOARD ---------- */
+
+.admin-page{
+  max-width:1140px;
+}
+
+.admin-hero{
+  background:linear-gradient(140deg,#1d4ed8,#2f6df6 45%,#6ba3ff 120%);
+  color:#fff;
+  border-radius:26px;
+  padding:28px;
+  box-shadow:var(--shadow);
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:18px;
+  margin-bottom:18px;
+}
+
+.admin-eyebrow{
+  margin:0 0 6px;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.8);
+}
+
+.admin-hero h1{
+  margin:0;
+  font-size:38px;
+  line-height:1.08;
+}
+
+.admin-subtitle{
+  margin:10px 0 0;
+  color:rgba(255,255,255,.92);
+  max-width:700px;
+}
+
+.admin-logout{
+  width:auto;
+  border-color:rgba(255,255,255,.4);
+  color:#fff;
+  background:rgba(255,255,255,.12);
+}
+
+.admin-logout:hover{
+  background:rgba(255,255,255,.2);
+}
+
+.admin-metrics{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:18px;
+}
+
+.admin-stat-card{
+  background:#fff;
+  border:1px solid #dde6f4;
+  border-radius:18px;
+  padding:14px 16px;
+  box-shadow:var(--shadow);
+}
+
+.admin-stat-label{
+  margin:0;
+  color:#516179;
+  font-size:13px;
+  font-weight:800;
+}
+
+.admin-stat-value{
+  margin:6px 0 0;
+  font-size:30px;
+  font-weight:900;
+  line-height:1;
+}
+
+.admin-layout{
+  display:grid;
+  grid-template-columns:1.2fr 1fr;
+  gap:14px;
+  margin-bottom:16px;
+}
+
+.admin-panel{
+  background:rgba(255,255,255,.96);
+  border-radius:22px;
+  box-shadow:var(--shadow);
+  border:1px solid #dce5f4;
+  padding:18px;
+}
+
+.admin-panel h2{
+  margin:0 0 12px;
+  font-size:24px;
+}
+
+.admin-search-form{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+
+.admin-input{
+  flex:1;
+  min-width:180px;
+  border:1px solid #d6e0ef;
+  border-radius:12px;
+  padding:10px 12px;
+  background:#f8fbff;
+  color:var(--text);
+  font:inherit;
+}
+
+.admin-input:focus{
+  outline:none;
+  border-color:#9db8fb;
+  box-shadow:0 0 0 4px rgba(47,109,246,.12);
+}
+
+.admin-user-chips{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.admin-user-activity{
+  border-top:1px solid #e2e8f0;
+  margin-top:10px;
+  padding-top:12px;
+}
+
+.admin-user-activity h3{
+  margin:0 0 4px;
+}
+
+.admin-user-activity .muted{
+  margin:0 0 10px;
+}
+
+.admin-activity-list{
+  padding-left:18px;
+  margin:0;
+}
+
+.admin-activity-list li{
+  margin-bottom:8px;
+}
+
+.admin-add-game-form{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.admin-form-actions{
+  grid-column:1 / -1;
+}
+
+.admin-managed-list{
+  padding-left:18px;
+  margin:0;
+}
+
+.admin-managed-list li{
+  margin-bottom:8px;
+}
+
 /* ---------- RESPONSIVE ---------- */
 
 @media (max-width:980px){
@@ -1406,6 +1579,8 @@ body{
   }
   .hero-copy h1{font-size:34px}
   .section h2{font-size:26px}
+  .admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .admin-layout{grid-template-columns:1fr}
 }
 
 @media (max-width:900px){
@@ -1439,6 +1614,22 @@ body{
   }
   .hero-copy h1{font-size:28px}
   .section-head{align-items:flex-start}
+    .admin-hero{
+    flex-direction:column;
+    padding:20px;
+  }
+  .admin-hero h1{
+    font-size:31px;
+  }
+  .admin-metrics{
+    grid-template-columns:1fr;
+  }
+  .admin-panel{
+    padding:14px;
+  }
+  .admin-add-game-form{
+    grid-template-columns:1fr;
+  }
 }
 
 .settings-section {
@@ -1486,7 +1677,9 @@ body[data-theme="dark"] .login-card,
 body[data-theme="dark"] .profile-top,
 body[data-theme="dark"] .col,
 body[data-theme="dark"] .review-right,
-body[data-theme="dark"] .review-side{
+body[data-theme="dark"] .review-side,
+body[data-theme="dark"] .admin-panel,
+body[data-theme="dark"] .admin-stat-card{
   background:#0f172a;
   border-color:#1e293b;
 }
@@ -1507,6 +1700,11 @@ body[data-theme="dark"] .friend-result-row{
 
 body[data-theme="dark"] .topbar{
   background:rgba(15,23,42,.94);
+}
+
+body[data-theme="dark"] .admin-input{
+  background:#0b1220;
+  border-color:#334155;
 }
 
 .avatar {
