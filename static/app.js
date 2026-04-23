@@ -65,6 +65,7 @@ function stars(n){
 function cardHTML(game){
   const year=game?.released_year||((game?.released&&(""+game.released).match(/(19|20)\d{2}/)?.[0]))||"—";
   const rating=(typeof game.rating==="number"&&game.rating>0)?game.rating.toFixed(1):"—";
+  const primaryGenre=(game?.genres||[]).map(x=>typeof x==="string"?x:x?.name).find(Boolean)||"Unknown";
 
   return `
     <div class="card" onclick="location.href='/game/${game.id}'">
@@ -75,6 +76,8 @@ function cardHTML(game){
         <div class="title">${escapeHtml(game.name)}</div>
         <div class="meta">
           <span>${year}</span>
+          <span>•</span>
+          <span>${escapeHtml(primaryGenre)}</span>
           <span>•</span>
           <span>⭐ ${rating}</span>
         </div>
@@ -631,8 +634,9 @@ async function loadGameDetail(gameId){
     if(title) title.textContent=g.name;
 
     const dev=g.developers?.[0]?.name||"Unknown studio";
-    const year=(g.released&&(""+g.released).slice(0,4))||"—";
-    if(subline) subline.textContent=`${year} • ${dev}`;
+    const year=g?.released_year||((g.released&&(""+g.released).match(/(19|20)\d{2}/)?.[0]))||"—";
+    const primaryGenre=(g?.genres||[]).map(x=>typeof x==="string"?x:x?.name).find(Boolean)||"Unknown";
+    if(subline) subline.textContent=`${year} • ${primaryGenre} • ${dev}`;
 
     if(desc){
       desc.textContent=g.description_raw||"No description available.";
