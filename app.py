@@ -91,6 +91,9 @@ def normalize_game(item):
     Convert CheapShark items into RAWG-like objects:
     { id, name, background_image, rating, released, released_year, genres, added, steam_appid }
     """
+def default_genres(genres):
+    return genres if genres else [{"name": "Unknown"}]
+    
     # Deals endpoint items
     if "dealID" in item and "title" in item:
         game_id = item.get("gameID") or item.get("dealID")
@@ -102,9 +105,9 @@ def normalize_game(item):
             "id": str(game_id),
             "name": name,
             "background_image": img,
-            "released": None,
-            "released_year": None,
-            "genres": [],
+            "released": "Unknown",
+            "released_year": 2000,
+            "genres": default_genres([]),
             "rating": rating_5,
             "added": int(float(item.get("savings") or 0) * 10),
             "steam_appid": item.get("steamAppID"),
@@ -116,22 +119,23 @@ def normalize_game(item):
             "id": str(item.get("gameID")),
             "name": item.get("external", "Unknown"),
             "background_image": item.get("thumb") or "",
-            "released": None,
-            "released_year": None,
-            "genres": [],
+            "released": "Unknown",
+            "released_year": 2000,
+            "genres": default_genres([]),
             "rating": 0.0,
             "added": 0,
             "steam_appid": item.get("steamAppID"),
         }
 
     released = item.get("released")
+    release_year = parse_release_year(released) or 2000
     return {
         "id": str(item.get("gameID") or item.get("id") or "0"),
         "name": item.get("name") or item.get("title") or "Unknown",
         "background_image": item.get("background_image") or item.get("thumb") or "",
-        "released": released,
-        "released_year": parse_release_year(released),
-        "genres": item.get("genres") or [],
+        "released": released or "Unknown",
+        "released_year": release_year,
+        "genres": default_genres(item.get("genres") or []),
         "rating": float(item.get("rating") or 0.0),
         "added": int(item.get("added") or 0),
         "steam_appid": item.get("steam_appid") or item.get("steamAppID"),
@@ -161,6 +165,13 @@ def enrich_games_with_steam_metadata(games):
         if genres and not g.get("genres"):
             g["genres"] = [{"name": x.get("description")} for x in genres if x.get("description")]
 
+        if not g.get("genres"):
+            g["genres"] = [{"name": "Unknown"}]
+
+        if not g.get("released_year"):
+            g["released_year"] = 2000
+            g["released"] = g.get("released") or "Unknown"
+            
     return games
 
 def get_steam_details(steam_appid):
@@ -908,7 +919,9 @@ def api_game(game_id):
             "id": str(game_id),
             "name": info.get("title", "Unknown"),
             "background_image": info.get("thumb") or "",
-            "released": None,
+            "released": "Unknown",
+            "released_year": 2000,
+            "genres": [{"name": "Unknown"}],
             "rating": 0.0,
             "added": 1200,
             "developers": [{"name": "Unknown Studio"}],
@@ -936,7 +949,12 @@ def api_game(game_id):
             rd = steam.get("release_date", {}).get("date")
             if rd:
                 base["released"] = rd
+                base["released_year"] = parse_release_year(rd) or 2000
 
+            genres = steam.get("genres") or []
+            if genres:
+                base["genres"] = [{"name": x.get("description")} for x in genres if x.get("description")] or [{"name": "Unknown"}]
+                
         return jsonify(base)
 
     except Exception as e:
