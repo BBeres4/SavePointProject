@@ -91,8 +91,8 @@ def normalize_game(item):
     Convert CheapShark items into RAWG-like objects:
     { id, name, background_image, rating, released, released_year, genres, added, steam_appid }
     """
-def default_genres(genres):
-    return genres if genres else [{"name": "Unknown"}]
+    def default_genres(genres):
+        return genres if genres else [{"name": "Unknown"}]
     
     # Deals endpoint items
     if "dealID" in item and "title" in item:
