@@ -17,7 +17,7 @@
       <a class="ghost-btn admin-logout" href="/admin/logout">Logout</a>
     </section>
 
-<section class="admin-metrics">
+    <section class="admin-metrics">
       <article class="admin-stat-card">
         <p class="admin-stat-label">Accounts</p>
         <p class="admin-stat-value">{{ metrics.user_count }}</p>
@@ -35,6 +35,47 @@
         <p class="admin-stat-value">{{ metrics.managed_games_count }}</p>
       </article>
     </section>
+
+    <section class="admin-trends-grid">
+      <article class="admin-panel">
+        <div class="admin-panel-head">
+          <h2>Account Creation Trend</h2>
+          <p class="muted">Last 14 days</p>
+        </div>
+        <div class="admin-bar-chart">
+          {% for point in signup_chart %}
+            <div class="admin-bar-col" title="{{ point.day }}: {{ point.count }} signups">
+              <div class="admin-bar-track">
+                <div class="admin-bar-value" style="height: {{ ((point.count / signup_chart_max) * 100) | round(1) }}%;"></div>
+              </div>
+              <p class="admin-bar-count">{{ point.count }}</p>
+              <p class="admin-bar-label">{{ point.label }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="admin-panel">
+        <div class="admin-panel-head">
+          <h2>Community Activity Mix</h2>
+          <p class="muted">All-time totals</p>
+        </div>
+        <div class="admin-horizontal-chart">
+          {% for item in activity_breakdown %}
+            <div class="admin-h-row">
+              <div class="admin-h-meta">
+                <span>{{ item.label }}</span>
+                <b>{{ item.total }}</b>
+              </div>
+              <div class="admin-h-track">
+                <div class="admin-h-fill" style="width: {{ ((item.total / activity_chart_max) * 100) | round(1) }}%;"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
 
     <section class="admin-layout">
       <article class="admin-panel">
