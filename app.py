@@ -509,7 +509,7 @@ def admin_dashboard():
     lists_count = conn.execute("SELECT COUNT(*) AS c FROM lists").fetchone()["c"]
     managed_games_count = conn.execute("SELECT COUNT(*) AS c FROM managed_games").fetchone()["c"]
 
-        daily_signups_raw = conn.execute("""
+    daily_signups_raw = conn.execute("""
         SELECT DATE(created_at) AS day, COUNT(*) AS total
         FROM users
         WHERE DATE(created_at) >= DATE('now', '-13 days')
