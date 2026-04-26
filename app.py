@@ -509,6 +509,65 @@ def admin_dashboard():
     lists_count = conn.execute("SELECT COUNT(*) AS c FROM lists").fetchone()["c"]
     managed_games_count = conn.execute("SELECT COUNT(*) AS c FROM managed_games").fetchone()["c"]
 
+        daily_signups_raw = conn.execute("""
+        SELECT DATE(created_at) AS day, COUNT(*) AS total
+        FROM users
+        WHERE DATE(created_at) >= DATE('now', '-13 days')
+        GROUP BY DATE(created_at)
+        ORDER BY day ASC
+    """).fetchall()
+    signups_lookup = {row["day"]: row["total"] for row in daily_signups_raw}
+    signup_chart = []
+    for i in range(13, -1, -1):
+        day = (datetime.utcnow() - timedelta(days=i)).strftime("%Y-%m-%d")
+        signup_chart.append({
+            "day": day,
+            "label": datetime.strptime(day, "%Y-%m-%d").strftime("%b %d"),
+            "count": signups_lookup.get(day, 0)
+        })
+
+    max_signups = max((item["count"] for item in signup_chart), default=0)
+    signup_chart_max = max_signups if max_signups > 0 else 1
+
+    activity_breakdown = conn.execute("""
+        SELECT 'Reviews' AS label, COUNT(*) AS total FROM reviews
+        UNION ALL
+        SELECT 'List Adds' AS label, COUNT(*) AS total FROM list_items
+        UNION ALL
+        SELECT 'Follows' AS label, COUNT(*) AS total FROM friendships
+    """).fetchall()
+    activity_max = max((row["total"] for row in activity_breakdown), default=0)
+    activity_chart_max = activity_max if activity_max > 0 else 1
+
+    top_members = conn.execute("""
+        SELECT
+            u.id,
+            u.username,
+            COALESCE(r.review_count, 0) AS review_count,
+            COALESCE(li.list_add_count, 0) AS list_add_count,
+            COALESCE(f.follow_count, 0) AS follow_count,
+            (COALESCE(r.review_count, 0) + COALESCE(li.list_add_count, 0) + COALESCE(f.follow_count, 0)) AS engagement_score
+        FROM users u
+        LEFT JOIN (
+            SELECT user_id, COUNT(*) AS review_count
+            FROM reviews
+            GROUP BY user_id
+        ) r ON r.user_id = u.id
+        LEFT JOIN (
+            SELECT l.user_id, COUNT(*) AS list_add_count
+            FROM list_items li
+            JOIN lists l ON l.id = li.list_id
+            GROUP BY l.user_id
+        ) li ON li.user_id = u.id
+        LEFT JOIN (
+            SELECT follower_id AS user_id, COUNT(*) AS follow_count
+            FROM friendships
+            GROUP BY follower_id
+        ) f ON f.user_id = u.id
+        ORDER BY engagement_score DESC, u.username ASC
+        LIMIT 5
+    """).fetchall()
+
     q = (request.args.get("q") or "").strip()
     users = []
     if q:
@@ -579,6 +638,11 @@ def admin_dashboard():
         selected_user=selected_user,
         activity=activity,
         managed_games=managed_games,
+        signup_chart=signup_chart,
+        signup_chart_max=signup_chart_max,
+        activity_breakdown=activity_breakdown,
+        activity_chart_max=activity_chart_max,
+        top_members=top_members,
     )
 
 
