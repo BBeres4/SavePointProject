@@ -120,6 +120,7 @@
         {% if error %}<div class="error">{{ error }}</div>{% endif %}
         {% if notice %}<div class="success">{{ notice }}</div>{% endif %}
         <form method="POST" action="/admin" class="admin-add-game-form">
+          <input type="hidden" name="action" value="add_game" />
           <input class="admin-input" name="title" placeholder="Game title" required />
           <input class="admin-input" name="genre" placeholder="Genre" />
           <input class="admin-input" name="platform" placeholder="Platform" />
@@ -147,6 +148,41 @@
         </ul>
       {% else %}
         <p class="muted">No managed games yet.</p>
+      {% endif %}
+    </section>
+     
+    <section class="admin-panel">
+      <h2>Reported Comments</h2>
+      {% if reported_comments %}
+        <ul class="admin-managed-list">
+          {% for item in reported_comments %}
+            <li>
+              <div>
+                <b>Comment #{{ item.comment_id }}</b>
+                <span class="muted">on review #{{ item.review_id }} (game #{{ item.game_id }})</span>
+              </div>
+              <div class="muted">Author: {{ item.comment_author }} • Reported by: {{ item.reporter_username }} • Reports: {{ item.report_count }}</div>
+              <div>{{ item.comment_body }}</div>
+              <div class="muted">Reported at {{ item.reported_at }}</div>
+              <div class="admin-form-actions" style="margin-top:8px;">
+                <form method="POST" action="/admin" style="display:inline;">
+                  <input type="hidden" name="action" value="moderate_comment" />
+                  <input type="hidden" name="report_id" value="{{ item.report_id }}" />
+                  <input type="hidden" name="decision" value="delete" />
+                  <button class="primary-btn" type="submit">Delete Comment</button>
+                </form>
+                <form method="POST" action="/admin" style="display:inline;">
+                  <input type="hidden" name="action" value="moderate_comment" />
+                  <input type="hidden" name="report_id" value="{{ item.report_id }}" />
+                  <input type="hidden" name="decision" value="keep" />
+                  <button class="ghost-btn" type="submit">Keep Comment</button>
+                </form>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">No reported comments.</p>
       {% endif %}
     </section>
   </main>
