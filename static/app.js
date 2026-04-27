@@ -725,7 +725,14 @@ async function loadGameDetail(gameId){
           box.innerHTML=`
             <div class="review-comments-list">
               ${comments.length
-                ? comments.map(c=>`<div class="review-comment"><b>${escapeHtml(c.username)}:</b> ${escapeHtml(c.body)}</div>`).join("")
+                ? comments.map(c=>`
+                    <div class="review-comment">
+                      <b>${escapeHtml(c.username)}:</b> ${escapeHtml(c.body)}
+                      <button class="secondary-btn review-comment-report" data-comment-id="${c.id}" ${c.reported_by_me ? "disabled" : ""}>
+                        ${c.reported_by_me ? "Reported" : "Report"}
+                      </button>
+                    </div>
+                  `).join("")
                 : `<div class="muted">No comments yet.</div>`
               }
             </div>
@@ -737,6 +744,24 @@ async function loadGameDetail(gameId){
           box.dataset.open="1";
           const sendBtn=box.querySelector(".review-comment-send");
           const input=box.querySelector(".review-comment-input");
+            box.querySelectorAll(".review-comment-report").forEach(reportBtn=>{
+            reportBtn.addEventListener("click",async()=>{
+              const commentId=reportBtn.dataset.commentId;
+              if(!commentId) return;
+              const res=await fetch(`/api/comments/${commentId}/report`,{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({})
+              });
+              const data=await res.json();
+              if(!res.ok){
+                alert(data?.error||"Could not report this comment.");
+                return;
+              }
+              reportBtn.disabled=true;
+              reportBtn.textContent="Reported";
+            });
+          });
           sendBtn?.addEventListener("click",async()=>{
             const text=(input?.value||"").trim();
             if(!text) return;
