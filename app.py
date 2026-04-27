@@ -489,7 +489,7 @@ def admin_dashboard():
     notice = None
     if request.method == "POST":
           action = (request.form.get("action") or "").strip()
-        if action == "moderate_comment":
+          if action == "moderate_comment":
             report_id_raw = (request.form.get("report_id") or "").strip()
             decision = (request.form.get("decision") or "").strip()
             if not report_id_raw.isdigit():
