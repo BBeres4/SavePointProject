@@ -509,25 +509,28 @@ def admin_dashboard():
     lists_count = conn.execute("SELECT COUNT(*) AS c FROM lists").fetchone()["c"]
     managed_games_count = conn.execute("SELECT COUNT(*) AS c FROM managed_games").fetchone()["c"]
 
-    daily_signups_raw = conn.execute("""
-        SELECT DATE(created_at) AS day, COUNT(*) AS total
+    available_years_raw = conn.execute("""
+        SELECT DISTINCT CAST(strftime('%Y', created_at) AS INTEGER) AS year
         FROM users
-        WHERE DATE(created_at) >= DATE('now', '-13 days')
-        GROUP BY DATE(created_at)
-        ORDER BY day ASC
+        WHERE created_at IS NOT NULL
+        ORDER BY year DESC
     """).fetchall()
-    signups_lookup = {row["day"]: row["total"] for row in daily_signups_raw}
-    signup_chart = []
-    for i in range(13, -1, -1):
-        day = (datetime.utcnow() - timedelta(days=i)).strftime("%Y-%m-%d")
-        signup_chart.append({
-            "day": day,
-            "label": datetime.strptime(day, "%Y-%m-%d").strftime("%b %d"),
-            "count": signups_lookup.get(day, 0)
-        })
+    available_years = [row["year"] for row in available_years_raw if row["year"]]
+    current_year = datetime.utcnow().year
+    if current_year not in available_years:
+        available_years.insert(0, current_year)
+    selected_year = available_years[0] if available_years else current_year
 
-    max_signups = max((item["count"] for item in signup_chart), default=0)
-    signup_chart_max = max_signups if max_signups > 0 else 1
+    monthly_signups_raw = conn.execute("""
+        SELECT CAST(strftime('%m', created_at) AS INTEGER) AS month, COUNT(*) AS total
+        FROM users
+        WHERE CAST(strftime('%Y', created_at) AS INTEGER) = ?
+        GROUP BY month
+        ORDER BY month ASC
+    """, (selected_year,)).fetchall()
+    monthly_lookup = {row["month"]: row["total"] for row in monthly_signups_raw}
+    month_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    signup_chart = [{"month": idx + 1, "label": label, "count": monthly_lookup.get(idx + 1, 0)} for idx, label in enumerate(month_labels)]
 
     activity_breakdown = conn.execute("""
         SELECT 'Reviews' AS label, COUNT(*) AS total FROM reviews
