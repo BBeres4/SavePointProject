@@ -515,6 +515,32 @@ def admin_dashboard():
                     notice = "Comment kept and report resolved."
                 else:
                     error = "Unknown moderation decision."
+        elif action == "moderate_review":
+            report_id_raw = (request.form.get("report_id") or "").strip()
+            decision = (request.form.get("decision") or "").strip()
+            if not report_id_raw.isdigit():
+                error = "Invalid report selected."
+            else:
+                report_id = int(report_id_raw)
+                report = conn.execute("""
+                    SELECT rr.id, rr.review_id, r.body
+                    FROM review_reports rr
+                    JOIN reviews r ON r.id = rr.review_id
+                    WHERE rr.id = ?
+                """, (report_id,)).fetchone()
+                if not report:
+                    error = "That report no longer exists."
+                elif decision == "delete":
+                    conn.execute("DELETE FROM reviews WHERE id = ?", (report["review_id"],))
+                    conn.execute("DELETE FROM review_reports WHERE review_id = ?", (report["review_id"],))
+                    conn.commit()
+                    notice = "Review deleted and report resolved."
+                elif decision == "keep":
+                    conn.execute("DELETE FROM review_reports WHERE id = ?", (report_id,))
+                    conn.commit()
+                    notice = "Review kept and report resolved."
+                else:
+                    error = "Unknown moderation decision."
         else:
             title = (request.form.get("title") or "").strip()
             genre = (request.form.get("genre") or "").strip()
@@ -676,6 +702,29 @@ def admin_dashboard():
         LIMIT 100
     """).fetchall()
 
+        reported_reviews = conn.execute("""
+        SELECT
+            rr.id AS report_id,
+            rr.created_at AS reported_at,
+            r.id AS review_id,
+            r.body AS review_body,
+            r.rating AS review_rating,
+            r.game_id,
+            author.username AS review_author,
+            reporter.username AS reporter_username,
+            (
+                SELECT COUNT(*)
+                FROM review_reports rr2
+                WHERE rr2.review_id = r.id
+            ) AS report_count
+        FROM review_reports rr
+        JOIN reviews r ON r.id = rr.review_id
+        JOIN users author ON author.id = r.user_id
+        JOIN users reporter ON reporter.id = rr.reporter_user_id
+        ORDER BY rr.created_at DESC
+        LIMIT 100
+    """).fetchall()
+    
     conn.close()
     return render_template(
         "admin_dashboard.html",
@@ -699,6 +748,7 @@ def admin_dashboard():
         activity_chart_max=activity_chart_max,
         top_members=top_members,
         reported_comments=reported_comments,
+        reported_reviews=reported_reviews,
     )
 
 
@@ -1222,16 +1272,23 @@ def api_reviews(game_id):
             (review_id,)
         ).fetchone()["c"]
         liked_by_me = False
+        reported_by_me = False
         if me:
             liked_by_me = bool(conn.execute(
                 "SELECT 1 FROM review_likes WHERE review_id = ? AND user_id = ?",
                 (review_id, me["id"])
             ).fetchone())
+            reported_by_me = bool(conn.execute(
+                "SELECT 1 FROM review_reports WHERE review_id = ? AND reporter_user_id = ?",
+                (review_id, me["id"])
+            ).fetchone())
+
 
         payload = dict(r)
         payload["likes_count"] = likes_count
         payload["comments_count"] = comments_count
         payload["liked_by_me"] = liked_by_me
+        payload["reported_by_me"] = reported_by_me
         out.append(payload)
 
     conn.close()
@@ -1462,6 +1519,37 @@ def api_comment_report(comment_id):
         conn.execute(
             "INSERT INTO comment_reports (comment_id, reporter_user_id) VALUES (?, ?)",
             (comment_id, me["id"])
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        return jsonify({"ok": True, "already_reported": True})
+
+    conn.close()
+    return jsonify({"ok": True, "reported": True})
+
+@app.post("/api/review/<int:review_id>/report")
+def api_review_report(review_id):
+    me = current_user()
+    if not me:
+        return jsonify({"error": "unauthorized"}), 401
+
+    conn = connect()
+    review = conn.execute(
+        "SELECT id, user_id FROM reviews WHERE id = ?",
+        (review_id,)
+    ).fetchone()
+    if not review:
+        conn.close()
+        return jsonify({"error": "review not found"}), 404
+    if int(review["user_id"]) == int(me["id"]):
+        conn.close()
+        return jsonify({"error": "cannot report your own review"}), 400
+
+    try:
+        conn.execute(
+            "INSERT INTO review_reports (review_id, reporter_user_id) VALUES (?, ?)",
+            (review_id, me["id"])
         )
         conn.commit()
     except sqlite3.IntegrityError:
