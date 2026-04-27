@@ -36,23 +36,23 @@
       </article>
     </section>
 
-    <section class="admin-trends-grid">
+   <section class="admin-trends-grid">
       <article class="admin-panel">
         <div class="admin-panel-head">
           <h2>Account Creation Trend</h2>
-          <p class="muted">Last 14 days</p>
+          <div class="admin-chart-controls">
+            <label for="signupYear" class="muted">Year</label>
+            <select id="signupYear" class="admin-select">
+              {% for yr in available_years %}
+                <option value="{{ yr }}" {% if yr == selected_year %}selected{% endif %}>{{ yr }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
-        <div class="admin-bar-chart">
-          {% for point in signup_chart %}
-            <div class="admin-bar-col" title="{{ point.day }}: {{ point.count }} signups">
-              <div class="admin-bar-track">
-                <div class="admin-bar-value" style="height: {{ ((point.count / signup_chart_max) * 100) | round(1) }}%;"></div>
-              </div>
-              <p class="admin-bar-count">{{ point.count }}</p>
-              <p class="admin-bar-label">{{ point.label }}</p>
-            </div>
-          {% endfor %}
+        <div class="admin-chart-wrap">
+          <canvas id="signupTrendChart" width="820" height="260"></canvas>
         </div>
+        <p id="signupTrendSummary" class="muted"></p>
       </article>
 
       <article class="admin-panel">
