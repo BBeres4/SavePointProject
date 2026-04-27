@@ -702,7 +702,7 @@ def admin_dashboard():
         LIMIT 100
     """).fetchall()
 
-        reported_reviews = conn.execute("""
+    reported_reviews = conn.execute("""
         SELECT
             rr.id AS report_id,
             rr.created_at AS reported_at,
