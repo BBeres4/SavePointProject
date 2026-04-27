@@ -515,7 +515,7 @@ def admin_dashboard():
                     notice = "Comment kept and report resolved."
                 else:
                     error = "Unknown moderation decision."
-        else:
+           else:
             title = (request.form.get("title") or "").strip()
             genre = (request.form.get("genre") or "").strip()
             platform = (request.form.get("platform") or "").strip()
