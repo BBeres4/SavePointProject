@@ -145,6 +145,19 @@ def normalize_game(item):
 
 
 def enrich_games_with_steam_metadata(games):
+    def has_unknown_genres(game):
+        genres = game.get("genres") or []
+        if not genres:
+            return True
+        normalized = []
+        for entry in genres:
+            if isinstance(entry, str):
+                normalized.append(entry.strip().lower())
+            elif isinstance(entry, dict):
+                normalized.append((entry.get("name") or "").strip().lower())
+        normalized = [x for x in normalized if x]
+        return not normalized or all(x == "unknown" for x in normalized)
+
     for g in games:
         steam_appid = g.get("steam_appid")
         if not steam_appid:
@@ -156,13 +169,13 @@ def enrich_games_with_steam_metadata(games):
 
         release_text = steam.get("release_date", {}).get("date")
         release_year = parse_release_year(release_text)
-        if release_text and not g.get("released"):
+        if release_text and (not g.get("released") or g.get("released") == "Unknown"):
             g["released"] = release_text
-        if release_year and not g.get("released_year"):
+        if release_year and (not g.get("released_year") or int(g.get("released_year") or 0) == 2000):
             g["released_year"] = release_year
 
         genres = steam.get("genres") or []
-        if genres and not g.get("genres"):
+        if genres and has_unknown_genres(g):
             g["genres"] = [{"name": x.get("description")} for x in genres if x.get("description")]
 
         if not g.get("genres"):
