@@ -305,7 +305,7 @@ async function loadGamesPage(){
     if(!yearValue) return true;
 
     const gameYear=Number(getYear(game)||0);
-    if(!gameYear||gameYear<2000||gameYear>2026) return false;
+    if(!gameYear) return false;
     
     const rangeMatch=yearValue.match(/^(\d{4})-(\d{4})$/);
     if(rangeMatch){
@@ -347,11 +347,10 @@ async function loadGamesPage(){
   function populateYearOptions(){
     if(!yearFilter) return;
     const selectedValue=yearFilter.value;
-    const allowedYears=[];
-
-    for(let year=2026;year>=2000;year--){
-      allowedYears.push(String(year));
-    }
+    
+    const source=activeView==="search"&&searchResultsRaw.length?searchResultsRaw:browseResultsRaw;
+    const allowedYears=[...new Set(source.map(getYear).filter(Boolean))]
+      .sort((a,b)=>Number(b)-Number(a));
 
     const yearOptions=[
       ...defaultYearOptions,
