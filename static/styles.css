@@ -1500,6 +1500,11 @@ body{
   margin-bottom:16px;
 }
 
+.admin-moderation-stack{
+  display:grid;
+  gap:20px;
+}
+
 .admin-panel{
   background:rgba(255,255,255,.96);
   border-radius:22px;
