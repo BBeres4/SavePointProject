@@ -150,7 +150,41 @@
         <p class="muted">No managed games yet.</p>
       {% endif %}
     </section>
-     
+
+      <section class="admin-panel">
+      <h2>Reported Reviews</h2>
+      {% if reported_reviews %}
+        <ul class="admin-managed-list">
+          {% for item in reported_reviews %}
+            <li>
+              <div>
+                <b>Review #{{ item.review_id }}</b>
+                <span class="muted">for game #{{ item.game_id }}</span>
+              </div>
+              <div class="muted">Author: {{ item.review_author }} • Rating: {{ item.review_rating }}/5 • Reported by: {{ item.reporter_username }} • Reports: {{ item.report_count }}</div>
+              <div>{{ item.review_body }}</div>
+              <div class="muted">Reported at {{ item.reported_at }}</div>
+              <div class="admin-form-actions" style="margin-top:8px;">
+                <form method="POST" action="/admin" style="display:inline;">
+                  <input type="hidden" name="action" value="moderate_review" />
+                  <input type="hidden" name="report_id" value="{{ item.report_id }}" />
+                  <input type="hidden" name="decision" value="delete" />
+                  <button class="primary-btn" type="submit">Delete Review</button>
+                </form>
+                <form method="POST" action="/admin" style="display:inline;">
+                  <input type="hidden" name="action" value="moderate_review" />
+                  <input type="hidden" name="report_id" value="{{ item.report_id }}" />
+                  <input type="hidden" name="decision" value="keep" />
+                  <button class="ghost-btn" type="submit">Keep Review</button>
+                </form>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">No reported reviews.</p>
+      {% endif %}
+    </section>
     <section class="admin-panel">
       <h2>Reported Comments</h2>
       {% if reported_comments %}
