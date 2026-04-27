@@ -270,10 +270,7 @@ async function loadGamesPage(){
   if(ratingFilter) ratingFilter.value="";
   if(sortFilter) sortFilter.value="";
 
-  const defaultYearOptions=[...(yearFilter?.options||[])].map(opt=>({
-    value:opt.value,
-    label:opt.textContent||opt.value
-  }));
+  const defaultYearOptions=[{value:"",label:"Year"}];
   const defaultGenreOptions=[...(genreFilter?.options||[])].map(opt=>({
     value:opt.value,
     label:opt.textContent||opt.value
@@ -308,8 +305,8 @@ async function loadGamesPage(){
     if(!yearValue) return true;
 
     const gameYear=Number(getYear(game)||0);
-    if(!gameYear) return false;
-
+    if(!gameYear||gameYear<2000||gameYear>2026) return false;
+    
     const rangeMatch=yearValue.match(/^(\d{4})-(\d{4})$/);
     if(rangeMatch){
       const minYear=Number(rangeMatch[1]);
@@ -347,31 +344,22 @@ async function loadGamesPage(){
     );
   }
 
-  function populateYearOptions(list){
+  function populateYearOptions(){
     if(!yearFilter) return;
     const selectedValue=yearFilter.value;
-    const dynamicYears=[...new Set(list.map(getYear).filter(Boolean))].sort((a,b)=>Number(b)-Number(a));
-    const mergedOptions=[...defaultYearOptions];
+    const allowedYears=[];
 
-    dynamicYears.forEach(year=>{
-      if(!mergedOptions.some(opt=>opt.value===year)){
-        mergedOptions.push({value:year,label:year});
-      }
-    });
+    for(let year=2026;year>=2000;year--){
+      allowedYears.push(String(year));
+    }
 
-    const placeholderOption=mergedOptions.find(opt=>!opt.value);
-    const exactYearOptions=mergedOptions
-      .filter(opt=>/^\d{4}$/.test(opt.value))
-      .sort((a,b)=>Number(b.value)-Number(a.value));
-    const rangeOptions=mergedOptions.filter(opt=>opt.value&&!/^\d{4}$/.test(opt.value));
-    const sortedOptions=[
-      ...(placeholderOption?[placeholderOption]:[]),
-      ...exactYearOptions,
-      ...rangeOptions
+    const yearOptions=[
+      ...defaultYearOptions,
+      ...allowedYears.map(year=>({value:year,label:year}))
     ];
 
-    yearFilter.innerHTML=sortedOptions.map(opt=>`<option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>`).join("");
-    yearFilter.value=sortedOptions.some(opt=>opt.value===selectedValue)?selectedValue:"";
+    yearFilter.innerHTML=yearOptions.map(opt=>`<option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>`).join("");
+    yearFilter.value=yearOptions.some(opt=>opt.value===selectedValue)?selectedValue:"";
   }
 
   function populateGenreOptions(list){
