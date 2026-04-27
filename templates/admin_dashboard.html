@@ -150,5 +150,101 @@
       {% endif %}
     </section>
   </main>
+  <script>
+    (function () {
+      const canvas = document.getElementById("signupTrendChart");
+      const yearSelect = document.getElementById("signupYear");
+      const summary = document.getElementById("signupTrendSummary");
+      if (!canvas || !yearSelect) return;
+
+      const ctx = canvas.getContext("2d");
+      const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+      function drawChart(data) {
+        if (!ctx) return;
+
+        const values = monthLabels.map((_, idx) => Number(data?.[idx]?.count || 0));
+        const total = values.reduce((sum, v) => sum + v, 0);
+        const maxValue = Math.max(...values, 1);
+
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = { top: 24, right: 16, bottom: 40, left: 42 };
+        const plotWidth = width - padding.left - padding.right;
+        const plotHeight = height - padding.top - padding.bottom;
+        const xStep = plotWidth / Math.max(values.length - 1, 1);
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "#f8f9fc";
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.strokeStyle = "#d7deea";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, padding.top);
+        ctx.lineTo(padding.left, height - padding.bottom);
+        ctx.lineTo(width - padding.right, height - padding.bottom);
+        ctx.stroke();
+
+        ctx.fillStyle = "#5c6b8a";
+        ctx.font = "12px system-ui, -apple-system, Segoe UI, sans-serif";
+        for (let i = 0; i <= 4; i++) {
+          const yValue = Math.round((maxValue / 4) * i);
+          const y = height - padding.bottom - (plotHeight * i) / 4;
+          ctx.fillText(String(yValue), 10, y + 4);
+          ctx.strokeStyle = "rgba(215, 222, 234, 0.7)";
+          ctx.beginPath();
+          ctx.moveTo(padding.left, y);
+          ctx.lineTo(width - padding.right, y);
+          ctx.stroke();
+        }
+
+        ctx.strokeStyle = "#5664d2";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        values.forEach((value, idx) => {
+          const x = padding.left + idx * xStep;
+          const y = height - padding.bottom - (value / maxValue) * plotHeight;
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        values.forEach((value, idx) => {
+          const x = padding.left + idx * xStep;
+          const y = height - padding.bottom - (value / maxValue) * plotHeight;
+          ctx.fillStyle = "#5664d2";
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = "#33415f";
+          ctx.fillText(monthLabels[idx], x - 10, height - 14);
+        });
+
+        if (summary) {
+          const peak = Math.max(...values);
+          const peakIdx = values.indexOf(peak);
+          summary.textContent = total
+            ? `${total} accounts created in ${yearSelect.value}. Peak month: ${monthLabels[peakIdx]} (${peak}).`
+            : `No accounts were created in ${yearSelect.value}.`;
+        }
+      }
+
+      async function loadYear(year) {
+        try {
+          const res = await fetch(`/api/admin/signup-trends?year=${encodeURIComponent(year)}`);
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.error || "Failed to load chart.");
+          drawChart(data.monthly || []);
+        } catch (err) {
+          if (summary) summary.textContent = err.message || "Could not load account trend data.";
+        }
+      }
+
+      yearSelect.addEventListener("change", () => loadYear(yearSelect.value));
+      loadYear(yearSelect.value);
+    })();
+  </script>
 </body>
 </html>
