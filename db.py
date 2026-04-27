@@ -102,6 +102,18 @@ CREATE TABLE IF NOT EXISTS users (
     """)
 
     cur.execute("""
+    CREATE TABLE IF NOT EXISTS comment_reports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        comment_id INTEGER NOT NULL,
+        reporter_user_id INTEGER NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(comment_id, reporter_user_id),
+        FOREIGN KEY (comment_id) REFERENCES review_comments(id) ON DELETE CASCADE,
+        FOREIGN KEY (reporter_user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    """)
+
+    cur.execute("""
     CREATE TABLE IF NOT EXISTS admins (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
