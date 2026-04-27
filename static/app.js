@@ -687,6 +687,9 @@ async function loadGameDetail(gameId){
                     <button class="secondary-btn review-comments-toggle" data-review-id="${r.id}">
                       💬 Comments (${r.comments_count||0})
                     </button>
+                    <button class="secondary-btn review-report-btn" data-review-id="${r.id}" ${r.reported_by_me ? "disabled" : ""}>
+                      ${r.reported_by_me ? "Reported" : "Report"}
+                    </button>
                   </div>
                   <div class="review-comments-box" id="comments-${r.id}"></div>
                 </div>
@@ -705,6 +708,25 @@ async function loadGameDetail(gameId){
           });
           const data=await res.json();
           btn.textContent=`${data.liked ? "💙":"🤍"} Like (${data.likes_count||0})`;
+        });
+      });
+
+      reviews.querySelectorAll(".review-report-btn").forEach(btn=>{
+        btn.addEventListener("click",async()=>{
+          const reviewId=btn.dataset.reviewId;
+          if(!reviewId) return;
+          const res=await fetch(`/api/review/${reviewId}/report`,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({})
+          });
+          const data=await res.json();
+          if(!res.ok){
+            alert(data?.error||"Could not report this review.");
+            return;
+          }
+          btn.disabled=true;
+          btn.textContent="Reported";
         });
       });
 
