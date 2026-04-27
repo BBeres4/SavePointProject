@@ -1796,6 +1796,25 @@ body{
   max-width: 500px;
 }
 
+.settings-section label {
+  display: block;
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+.settings-section .checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 14px;
+  font-weight: 500;
+}
+
+.settings-section .checkbox-row input {
+  width: auto;
+  margin: 0;
+}
+
 .settings-section input {
   width: 100%;
   padding: 10px;
