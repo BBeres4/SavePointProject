@@ -155,25 +155,7 @@
       <section class="admin-panel">
     <div class="admin-moderation-stack">
       <section class="admin-panel">
-        <h2>Recently Added Managed Games</h2>
-        {% if managed_games %}
-            <ul class="admin-managed-list">
-            {% for g in managed_games %}
-              <li>
-                <b>{{ g.title }}</b>
-                {% if g.genre %}<span class="muted"> • {{ g.genre }}</span>{% endif %}
-                {% if g.platform %}<span class="muted"> • {{ g.platform }}</span>{% endif %}
-                {% if g.release_year %}<span class="muted"> • {{ g.release_year }}</span>{% endif %}
-                <span class="muted">(by {{ g.admin_username }} on {{ g.created_at }})</span>
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p class="muted">No managed games yet.</p>
-        {% endif %}
-      </section>
-      
-    <section class="admin-panel">
+ 
         <h2>Reported Reviews</h2>
         {% if reported_reviews %}
           <ul class="admin-managed-list">
