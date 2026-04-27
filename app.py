@@ -488,21 +488,49 @@ def admin_dashboard():
     error = None
     notice = None
     if request.method == "POST":
-        title = (request.form.get("title") or "").strip()
-        genre = (request.form.get("genre") or "").strip()
-        platform = (request.form.get("platform") or "").strip()
-        release_year_raw = (request.form.get("release_year") or "").strip()
-        release_year = parse_release_year(release_year_raw) if release_year_raw else None
-
-        if len(title) < 2:
-            error = "Game title must be at least 2 characters."
+      action = (request.form.get("action") or "").strip()
+        if action == "moderate_comment":
+            report_id_raw = (request.form.get("report_id") or "").strip()
+            decision = (request.form.get("decision") or "").strip()
+            if not report_id_raw.isdigit():
+                error = "Invalid report selected."
+            else:
+                report_id = int(report_id_raw)
+                report = conn.execute("""
+                    SELECT cr.id, cr.comment_id, rc.body
+                    FROM comment_reports cr
+                    JOIN review_comments rc ON rc.id = cr.comment_id
+                    WHERE cr.id = ?
+                """, (report_id,)).fetchone()
+                if not report:
+                    error = "That report no longer exists."
+                elif decision == "delete":
+                    conn.execute("DELETE FROM review_comments WHERE id = ?", (report["comment_id"],))
+                    conn.execute("DELETE FROM comment_reports WHERE comment_id = ?", (report["comment_id"],))
+                    conn.commit()
+                    notice = "Comment deleted and report resolved."
+                elif decision == "keep":
+                    conn.execute("DELETE FROM comment_reports WHERE id = ?", (report_id,))
+                    conn.commit()
+                    notice = "Comment kept and report resolved."
+                else:
+                    error = "Unknown moderation decision."       
         else:
-            conn.execute("""
-                INSERT INTO managed_games (title, genre, platform, release_year, added_by_admin_id)
-                VALUES (?, ?, ?, ?, ?)
-            """, (title, genre or None, platform or None, release_year, admin["id"]))
-            conn.commit()
-            notice = f"Added game '{title}' to admin-managed catalog."
+           title = (request.form.get("title") or "").strip()
+            genre = (request.form.get("genre") or "").strip()
+            platform = (request.form.get("platform") or "").strip()
+            release_year_raw = (request.form.get("release_year") or "").strip()
+            release_year = parse_release_year(release_year_raw) if release_year_raw else None
+
+            if len(title) < 2:
+                error = "Game title must be at least 2 characters."
+            else:
+                conn.execute("""
+                    INSERT INTO managed_games (title, genre, platform, release_year, added_by_admin_id)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (title, genre or None, platform or None, release_year, admin["id"]))
+                conn.commit()
+                notice = f"Added game '{title}' to admin-managed catalog."
 
     user_count = conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"]
     reviews_count = conn.execute("SELECT COUNT(*) AS c FROM reviews").fetchone()["c"]
@@ -624,6 +652,30 @@ def admin_dashboard():
         LIMIT 40
     """).fetchall()
 
+    reported_comments = conn.execute("""
+        SELECT
+            cr.id AS report_id,
+            cr.created_at AS reported_at,
+            rc.id AS comment_id,
+            rc.body AS comment_body,
+            author.username AS comment_author,
+            reporter.username AS reporter_username,
+            r.id AS review_id,
+            r.game_id,
+            (
+                SELECT COUNT(*)
+                FROM comment_reports c2
+                WHERE c2.comment_id = rc.id
+            ) AS report_count
+        FROM comment_reports cr
+        JOIN review_comments rc ON rc.id = cr.comment_id
+        JOIN users author ON author.id = rc.user_id
+        JOIN users reporter ON reporter.id = cr.reporter_user_id
+        JOIN reviews r ON r.id = rc.review_id
+        ORDER BY cr.created_at DESC
+        LIMIT 100
+    """).fetchall()
+
     conn.close()
     return render_template(
         "admin_dashboard.html",
@@ -646,6 +698,7 @@ def admin_dashboard():
         activity_breakdown=activity_breakdown,
         activity_chart_max=activity_chart_max,
         top_members=top_members,
+        reported_comments=reported_comments,
     )
 
 
@@ -1346,12 +1399,23 @@ def api_review_comments(review_id):
 
     conn = connect()
     rows = conn.execute("""
-        SELECT rc.id, rc.body, rc.created_at, u.username
+         SELECT
+            rc.id,
+            rc.body,
+            rc.created_at,
+            u.username,
+            CASE
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM comment_reports cr
+                    WHERE cr.comment_id = rc.id AND cr.reporter_user_id = ?
+                ) THEN 1 ELSE 0
+            END AS reported_by_me   
         FROM review_comments rc
         JOIN users u ON u.id = rc.user_id
         WHERE rc.review_id = ?
         ORDER BY rc.created_at ASC
-    """, (review_id,)).fetchall()
+    """, (me["id"], review_id)).fetchall()    
     conn.close()
     return jsonify({"comments": [dict(r) for r in rows]})
 
@@ -1374,6 +1438,39 @@ def api_review_comment_add(review_id):
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
+
+
+@app.post("/api/comments/<int:comment_id>/report")
+def api_comment_report(comment_id):
+    me = current_user()
+    if not me:
+        return jsonify({"error": "unauthorized"}), 401
+
+    conn = connect()
+    comment = conn.execute(
+        "SELECT id, user_id FROM review_comments WHERE id = ?",
+        (comment_id,)
+    ).fetchone()
+    if not comment:
+        conn.close()
+        return jsonify({"error": "comment not found"}), 404
+    if int(comment["user_id"]) == int(me["id"]):
+        conn.close()
+        return jsonify({"error": "cannot report your own comment"}), 400
+
+    try:
+        conn.execute(
+            "INSERT INTO comment_reports (comment_id, reporter_user_id) VALUES (?, ?)",
+            (comment_id, me["id"])
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        return jsonify({"ok": True, "already_reported": True})
+
+    conn.close()
+    return jsonify({"ok": True, "reported": True})
+
 
 
 # ---------------- run ----------------
