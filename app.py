@@ -488,8 +488,8 @@ def admin_dashboard():
     error = None
     notice = None
     if request.method == "POST":
-      action = (request.form.get("action") or "").strip()
-    if action == "moderate_comment":
+          action = (request.form.get("action") or "").strip()
+        if action == "moderate_comment":
             report_id_raw = (request.form.get("report_id") or "").strip()
             decision = (request.form.get("decision") or "").strip()
             if not report_id_raw.isdigit():
@@ -514,9 +514,9 @@ def admin_dashboard():
                     conn.commit()
                     notice = "Comment kept and report resolved."
                 else:
-                    error = "Unknown moderation decision."       
+                    error = "Unknown moderation decision."
         else:
-           title = (request.form.get("title") or "").strip()
+            title = (request.form.get("title") or "").strip()
             genre = (request.form.get("genre") or "").strip()
             platform = (request.form.get("platform") or "").strip()
             release_year_raw = (request.form.get("release_year") or "").strip()
