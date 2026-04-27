@@ -70,9 +70,23 @@ def parse_release_year(raw_date):
         return None
 
     if isinstance(raw_date, int):
+        if raw_date > 10_000:
+            try:
+                return datetime.utcfromtimestamp(raw_date).year
+            except (OverflowError, OSError, ValueError):
+                return None
         return raw_date if 1950 <= raw_date <= 2100 else None
 
     text = str(raw_date).strip()
+    if text.isdigit():
+        numeric_value = int(text)
+        if numeric_value > 10_000:
+            try:
+                return datetime.utcfromtimestamp(numeric_value).year
+            except (OverflowError, OSError, ValueError):
+                return None
+        if 1950 <= numeric_value <= 2100:
+            return numeric_value
     m = re.search(r"(19|20)\d{2}", text)
     if m:
         return int(m.group(0))
@@ -105,8 +119,8 @@ def normalize_game(item):
             "id": str(game_id),
             "name": name,
             "background_image": img,
-            "released": "Unknown",
-            "released_year": 2000,
+            "released": item.get("releaseDate") or "Unknown",
+            "released_year": parse_release_year(item.get("releaseDate")),
             "genres": default_genres([]),
             "rating": rating_5,
             "added": int(float(item.get("savings") or 0) * 10),
@@ -115,12 +129,13 @@ def normalize_game(item):
 
     # Search endpoint items
     if "gameID" in item and ("external" in item or "thumb" in item):
+        release_text = item.get("releaseDate")
         return {
             "id": str(item.get("gameID")),
             "name": item.get("external", "Unknown"),
             "background_image": item.get("thumb") or "",
-            "released": "Unknown",
-            "released_year": 2000,
+            "released": release_text or "Unknown",
+            "released_year": parse_release_year(release_text),
             "genres": default_genres([]),
             "rating": 0.0,
             "added": 0,
@@ -128,7 +143,7 @@ def normalize_game(item):
         }
 
     released = item.get("released")
-    release_year = parse_release_year(released) or 2000
+    release_year = parse_release_year(released)
     return {
         "id": str(item.get("gameID") or item.get("id") or "0"),
         "name": item.get("name") or item.get("title") or "Unknown",
@@ -171,7 +186,7 @@ def enrich_games_with_steam_metadata(games):
         release_year = parse_release_year(release_text)
         if release_text and (not g.get("released") or g.get("released") == "Unknown"):
             g["released"] = release_text
-        if release_year and (not g.get("released_year") or int(g.get("released_year") or 0) == 2000):
+        if release_year and not g.get("released_year"):
             g["released_year"] = release_year
 
         genres = steam.get("genres") or []
@@ -180,10 +195,9 @@ def enrich_games_with_steam_metadata(games):
 
         if not g.get("genres"):
             g["genres"] = [{"name": "Unknown"}]
-
-        if not g.get("released_year"):
-            g["released_year"] = 2000
-            g["released"] = g.get("released") or "Unknown"
+            
+        if not g.get("released"):
+            g["released"] = "Unknown"
             
     return games
 
@@ -1136,7 +1150,7 @@ def api_game(game_id):
             "name": info.get("title", "Unknown"),
             "background_image": info.get("thumb") or "",
             "released": "Unknown",
-            "released_year": 2000,
+            "released_year": None,
             "genres": [{"name": "Unknown"}],
             "rating": 0.0,
             "added": 1200,
@@ -1165,8 +1179,8 @@ def api_game(game_id):
             rd = steam.get("release_date", {}).get("date")
             if rd:
                 base["released"] = rd
-                base["released_year"] = parse_release_year(rd) or 2000
-
+                base["released_year"] = parse_release_year(rd)
+                
             genres = steam.get("genres") or []
             if genres:
                 base["genres"] = [{"name": x.get("description")} for x in genres if x.get("description")] or [{"name": "Unknown"}]
