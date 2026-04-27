@@ -640,13 +640,46 @@ def admin_dashboard():
         users=users,
         selected_user=selected_user,
         activity=activity,
-        managed_games=managed_games,
         signup_chart=signup_chart,
-        signup_chart_max=signup_chart_max,
+        selected_year=selected_year,
+        available_years=available_years,
         activity_breakdown=activity_breakdown,
         activity_chart_max=activity_chart_max,
         top_members=top_members,
     )
+
+
+
+
+@app.get("/api/admin/signup-trends")
+def admin_signup_trends():
+    admin = current_admin()
+    if not admin:
+        return jsonify({"error": "Admin login required."}), 401
+
+    year_raw = (request.args.get("year") or "").strip()
+    try:
+        year = int(year_raw) if year_raw else datetime.utcnow().year
+    except ValueError:
+        return jsonify({"error": "Invalid year."}), 400
+
+    if year < 2000 or year > datetime.utcnow().year + 1:
+        return jsonify({"error": "Year out of range."}), 400
+
+    conn = connect()
+    rows = conn.execute("""
+        SELECT CAST(strftime('%m', created_at) AS INTEGER) AS month, COUNT(*) AS total
+        FROM users
+        WHERE CAST(strftime('%Y', created_at) AS INTEGER) = ?
+        GROUP BY month
+        ORDER BY month ASC
+    """, (year,)).fetchall()
+    conn.close()
+
+    lookup = {row["month"]: row["total"] for row in rows}
+    month_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    monthly = [{"month": i + 1, "label": month_labels[i], "count": lookup.get(i + 1, 0)} for i in range(12)]
+    return jsonify({"year": year, "monthly": monthly})
 
 
 # ---------------- pages ----------------
